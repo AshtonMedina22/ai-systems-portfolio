@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --paper: #e6e9ef;
+  --ink: #1a2332;
+  --muted: #5a6577;
+  --accent: #1f5c99;
+  --accent-soft: #d6e4f5;
+  --accent-deep: #163e6b;
+  --line: #c5ccd8;
+  --surface: #f3f5f8;
+  --ok: #0f6b4c;
+  --warn: #b54708;
+  --danger: #b42318;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(
+      ellipse 120% 80% at 10% -10%,
+      rgba(31, 92, 153, 0.09),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 90% 60% at 100% 0%,
+      rgba(26, 35, 50, 0.05),
+      transparent 50%
+    ),
+    linear-gradient(
+      180deg,
+      #eef1f6 0%,
+      var(--paper) 40%,
+      #dfe3eb 100%
+    );
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+/* Subtle paper grain */
+.paper-grain::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.workspace-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.workspace-shell[data-running="true"] {
+  outline: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 4px;
+  transition: outline-color 200ms ease;
+}

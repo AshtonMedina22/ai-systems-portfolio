@@ -1,0 +1,36 @@
+{
+  "name": "ai-systems-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portfolio demos for MCP tool use, multi-agent workflows, and evaluation gates.",
+  "scripts": {
+    "dev": "next dev",
+    "dev:mcp": "python mcp-server/payflow_server.py",
+    "dev:web": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test:mcp": "python -m pytest mcp-server/test_mcp_tools.py -v"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AshtonMedina22/ai-systems-portfolio.git"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "lucide-react": "^1.25.0",
+    "next": "^15.5.21",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.22",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3"
+  }
+}
