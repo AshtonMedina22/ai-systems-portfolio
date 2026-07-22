@@ -12,103 +12,86 @@ import { site } from "@/lib/site";
 const PROJECTS = [
   {
     href: "/payflow",
-    eyebrow: "Project 1 - PayFlow",
-    title: "Accounts Payable & Anti-Fraud Suite",
-    headline: "Automated Invoice Processing & Financial Fraud Checks",
-    value:
-      "Helps cut manual invoice entry by verifying vendor credentials against core ledger systems and flagging unauthorized bank routing changes before payouts are released.",
-    connectors:
-      "Model Context Protocol (FastMCP) | SAP & NetSuite Ledger Integration | Fuzzy Entity Matching | Deterministic Anti-Fraud Rules",
+    eyebrow: "Project 1",
+    title: "PayFlow",
+    summary:
+      "Accounts payable automation that cuts down on manual invoice entry and flags fraudulent vendor bank changes before money leaves the bank. Cross-checks incoming bills against your records with fuzzy matching to catch spoofed invoices.",
+    stack: "FastMCP tools - SAP / NetSuite-style ledgers - fraud rules",
     live: true,
   },
   {
-    href: "/sre",
-    eyebrow: "Project 2 - Self-Healing SRE",
-    title: "Autonomous Incident Manager",
-    headline: "Incident Triage & Recovery with Human Approval",
-    value:
-      "Helps shorten outage response by using collaborative AI agents to diagnose failures and draft repair plans that still require manager approval before production changes.",
-    connectors:
-      "LangGraph Multi-Agent Debate | Human-in-the-Loop Sign-Off | AWS & Enterprise Cloud Health",
-    live: false,
+    href: "/migrate",
+    eyebrow: "Project 2",
+    title: "Client Migration & Onboarding",
+    summary:
+      "Automates bringing new clients onto a software platform. Takes messy legacy spreadsheets, cleans formatting errors, validates data types, and organizes everything into secure, isolated database partitions.",
+    stack: "SQL / PostgreSQL mapping - tenant schemas - error logs",
+    live: true,
   },
   {
-    href: "/guardrails",
-    eyebrow: "Project 3 - Enterprise Guardrails",
-    title: "Data Privacy & Safety Suite",
-    headline: "Automated PII Redaction & AI Quality Inspection",
-    value:
-      "Helps reduce data-exposure risk by stripping Social Security numbers, payment card data, and other sensitive fields before inputs are sent to AI models.",
-    connectors:
-      "Promptfoo Evals | Real-Time PII Sanitizer | HIPAA & GDPR-oriented Controls",
-    live: false,
+    href: "/workflow",
+    eyebrow: "Project 3",
+    title: "Workflow & Approval Manager",
+    summary:
+      "A step-by-step process runner that automates multi-department tasks while keeping people in control. If a request crosses a safe threshold, it pauses and waits for explicit manager sign-off.",
+    stack: "Async workflow - state checkpoints - manager review gates",
+    live: true,
   },
 ] as const;
 
 const VALUE_POINTS = [
   {
     icon: Lock,
-    title: "Data Privacy Controls",
-    body: "Automated PII redaction reduces the chance that sensitive customer fields are sent to external AI models.",
+    title: "Vendor and bank checks",
+    body: "Payments only move after the vendor and routing details look right against the ledger.",
   },
   {
     icon: Zap,
-    title: "Standardized MCP Tools",
-    body: "Secure tool connections that link LLMs to core business ledger databases through explicit, auditable interfaces.",
+    title: "Clear tool access",
+    body: "The AI only gets named tools with fixed inputs - not open access to company systems.",
   },
   {
     icon: Shield,
-    title: "Human-in-the-Loop",
-    body: "High-risk financial or infrastructure actions can require manager authorization before they execute.",
+    title: "Manager sign-off",
+    body: "Risky money moves can wait for a person to approve them before anything finishes.",
   },
 ] as const;
 
 const PHILOSOPHY = [
   {
-    step: "01",
-    title: "Business problem first",
-    body: "Identify manual labor bottlenecks and high-cost software risks before writing a line of agent logic.",
+    step: "1",
+    title: "Start with the business problem",
+    body: "Figure out where people are burning time or taking real risk, then build around that.",
   },
   {
-    step: "02",
-    title: "Deterministic safeguards",
-    body: "Enforce strict business rules so high-risk AI actions stay gated behind verified checks and approvals.",
+    step: "2",
+    title: "Put hard rules around the AI",
+    body: "Important checks stay fixed and reviewable. The model does not get free rein on payouts or production changes.",
   },
   {
-    step: "03",
-    title: "Glass-box auditability",
-    body: "Stream real-time tool logs and decision metrics so leaders can inspect each step.",
+    step: "3",
+    title: "Show the work",
+    body: "Leaders can watch the tool calls and decisions as they happen, not after the fact.",
   },
 ] as const;
 
 export default function HomePage() {
   return (
     <main className="relative z-10">
-      {/* Hero */}
       <section className="mx-auto max-w-5xl px-6 pt-16 pb-12 text-center sm:pt-24 sm:pb-16">
-        <p className="font-display text-2xl font-medium tracking-tight text-opal-main sm:text-3xl">
+        <h1 className="font-display text-4xl font-medium tracking-tight text-opal-main sm:text-5xl lg:text-6xl">
           {site.name}
-        </p>
-        <p className="mt-2">
+        </h1>
+        <p className="mt-3">
           <span className="eyebrow-opal">{site.role}</span>
         </p>
 
-        <div className="mt-8 inline-flex items-center rounded-xl border border-violet-200 bg-violet-50 px-3.5 py-1.5 text-xs font-semibold text-opal-purple">
-          Enterprise AI Systems & Agentic Architecture
-        </div>
-
-        <h1 className="mt-6 font-display text-3xl font-medium tracking-tight text-opal-main text-balance sm:text-5xl sm:leading-[1.15]">
-          Production-Grade AI Workflows Built with{" "}
-          <span className="bg-gradient-to-r from-opal-purple to-opal-violet bg-clip-text text-transparent">
-            Governance & Reliability
-          </span>
-        </h1>
-
-        <p className="mx-auto mt-6 max-w-3xl text-[16px] leading-relaxed text-opal-muted sm:text-lg">
-          I build production-ready AI systems that bridge large language models
-          with core enterprise software (SAP, NetSuite, Salesforce, Cloud
-          Infrastructure). Designed with deterministic safety guardrails,
-          automated data privacy, and human oversight.
+        <p className="mx-auto mt-8 max-w-2xl text-[16px] leading-relaxed text-opal-muted sm:text-lg">
+          Hi, I&apos;m Ashton Medina. I combine 10 years of hands-on business
+          operations leadership with modern systems architecture. I build
+          automated workflows, secure database pipelines, and smart operational
+          systems that save companies time, cut manual bottlenecks, and protect
+          bottom lines.
         </p>
 
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
@@ -116,7 +99,7 @@ export default function HomePage() {
             href="#projects"
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-opal-purple to-opal-violet px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-shadow hover:shadow-violet-500/30 sm:w-auto"
           >
-            View Live Interactive Demos
+            See the demos
             <ArrowDown className="h-4 w-4" />
           </a>
           <a
@@ -125,13 +108,30 @@ export default function HomePage() {
             rel="noopener noreferrer"
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-8 py-3.5 text-sm font-semibold text-opal-label shadow-sm transition-colors hover:border-violet-300 hover:text-opal-purple sm:w-auto"
           >
-            GitHub Repository
+            View on GitHub
             <ArrowUpRight className="h-4 w-4" />
           </a>
         </div>
+      </section>
 
-        {/* Value banner */}
-        <div className="card-opal mt-14 grid grid-cols-1 gap-0 rounded-2xl p-4 text-left sm:p-6 md:grid-cols-3">
+      <section className="mx-auto max-w-3xl px-6 pb-16">
+        <div className="text-center">
+          <h2 className="font-display text-2xl font-medium tracking-tight text-opal-main sm:text-3xl text-balance">
+            From Multi-Site Operations to Systems Architecture
+          </h2>
+          <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-opal-muted sm:text-base">
+            After more than a decade running business operations, I know how
+            fast inefficient workflows cost a company money. I built these
+            systems to handle those routine administrative tasks cleanly and
+            securely.
+          </p>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-opal-label">
+            Background in multi-site operations, childcare and education ops,
+            and logistics - plus an MBA.
+          </p>
+        </div>
+
+        <div className="card-opal mt-10 grid grid-cols-1 gap-0 rounded-2xl p-4 text-left sm:p-6 md:grid-cols-3">
           {VALUE_POINTS.map((point, index) => {
             const Icon = point.icon;
             return (
@@ -158,15 +158,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Projects */}
       <section id="projects" className="mx-auto max-w-3xl scroll-mt-24 px-6 py-16">
         <div className="mb-10 text-center">
           <h2 className="font-display text-2xl font-medium tracking-tight text-opal-main sm:text-3xl">
-            Core Enterprise Systems
+            Projects
           </h2>
           <p className="mt-2 text-sm text-opal-muted">
-            Interactive glass-box demos combining plain-text business value with
-            real-time technical streams.
+            Business controls on the left. Live tool activity on the right.
           </p>
         </div>
 
@@ -184,39 +182,34 @@ export default function HomePage() {
               >
                 <p className="eyebrow-opal">{project.eyebrow}</p>
                 <div className="mt-3 flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <h3
-                      className={`font-display text-2xl text-opal-main ${
-                        project.live
-                          ? "group-hover:text-opal-violet transition-colors"
-                          : ""
-                      }`}
-                    >
-                      {project.title}
-                    </h3>
-                    <p className="mt-2 text-sm font-semibold text-opal-label">
-                      {project.headline}
-                    </p>
-                  </div>
+                  <h3
+                    className={`font-display text-2xl text-opal-main ${
+                      project.live
+                        ? "group-hover:text-opal-violet transition-colors"
+                        : ""
+                    }`}
+                  >
+                    {project.title}
+                  </h3>
                   {project.live ? (
                     <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-opal-purple transition-transform duration-200 group-hover:translate-x-1" />
                   ) : null}
                 </div>
 
-                <p className="mt-4 text-sm leading-relaxed text-opal-muted">
-                  {project.value}
+                <p className="mt-3 text-sm leading-relaxed text-opal-muted">
+                  {project.summary}
                 </p>
 
                 <div className="mt-5 border-t border-slate-200/80 pt-4">
-                  <p className="label-opal mb-2">Key enterprise connectors</p>
-                  <p className="text-xs leading-relaxed text-opal-muted sm:text-sm">
-                    {project.connectors}
+                  <p className="label-opal mb-2">Built with</p>
+                  <p className="text-sm leading-relaxed text-opal-muted">
+                    {project.stack}
                   </p>
                 </div>
 
                 {!project.live ? (
-                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-opal-purple">
-                    Scaffold ready - glass-box demo next
+                  <p className="mt-4 text-sm font-medium text-opal-purple">
+                    Coming next
                   </p>
                 ) : null}
               </Link>
@@ -225,7 +218,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How I work */}
       <section
         id="philosophy"
         className="mx-auto max-w-5xl scroll-mt-24 px-6 pb-20 pt-4"
@@ -235,7 +227,7 @@ export default function HomePage() {
             How I work
           </h2>
           <p className="mt-2 text-sm text-opal-muted">
-            Production software for enterprise risk - not one-off AI scripts.
+            Built for real operations - not throwaway chatbots.
           </p>
         </div>
 

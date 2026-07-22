@@ -48,7 +48,7 @@ export interface MCPToolResponse {
   };
 }
 
-// Preset invoice payloads for the control panel
+// Preset invoice payloads for the demo picker
 export const SAMPLE_INVOICES: Record<string, InvoicePayload> = {
   clean: {
     invoiceId: "INV-2026-1042",

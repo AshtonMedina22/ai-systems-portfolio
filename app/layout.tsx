@@ -27,7 +27,7 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Ashton Medina - AI Solutions Architect",
   description:
-    "Production-ready AI systems bridging LLMs with SAP, NetSuite, Salesforce, and cloud infrastructure - with deterministic guardrails, PII privacy, and human oversight.",
+    "Ashton Medina builds automated workflows, secure database pipelines, and smart operational systems - combining 10 years of multi-site operations leadership with modern systems architecture.",
 };
 
 export default function RootLayout({

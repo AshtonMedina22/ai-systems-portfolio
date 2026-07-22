@@ -141,7 +141,7 @@ async function* runEmbeddedDemoRuntime(
   yield createLogEntry(
     "info",
     "mcp:session",
-    "Using in-project MCP tool runtime (demo-hosted). Same tool schemas as the FastMCP server.",
+    "Starting invoice checks with the hosted demo tools.",
     {
       runtime: "embedded",
       note: "Optional live FastMCP: npm run dev:mcp + PAYFLOW_MCP_MODE=http",
@@ -153,7 +153,7 @@ async function* runEmbeddedDemoRuntime(
   yield createLogEntry(
     "tool_call",
     "mcp:embedded_demo",
-    "MCP: Discovering available tools via JSON-RPC (tools/list)...",
+    "Listing available tools...",
     {
       method: "tools/list",
       tools: DEMO_MCP_TOOLS.map((t) => t.name),
@@ -165,7 +165,7 @@ async function* runEmbeddedDemoRuntime(
   yield createLogEntry(
     "tool_result",
     "mcp:embedded_demo",
-    `Discovered ${DEMO_MCP_TOOLS.length} tools: ${DEMO_MCP_TOOLS.map((t) => t.name).join(", ")}`,
+    `Ready: ${DEMO_MCP_TOOLS.map((t) => t.name).join(", ")}`,
     {
       tools: DEMO_MCP_TOOLS.map((t) => ({
         name: t.name,
@@ -198,7 +198,7 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_call",
     transportLabel,
-    `TOOL CALL: executing verify_vendor_entity(name="${invoice.vendorName}")`,
+    `Checking vendor registry for "${invoice.vendorName}"...`,
     {
       method: "tools/call",
       tool: "verify_vendor_entity",
@@ -218,13 +218,13 @@ async function* runWorkflow(
     yield createLogEntry(
       "error",
       "mcp:registry_check",
-      `SECURITY FLAG: vendor '${invoice.vendorName}' is not registered in the enterprise vendor registry.`,
+      `No match for "${invoice.vendorName}" in the company vendor list.`,
       vendorResultContent
     );
     yield createLogEntry(
       "warning",
       source,
-      "ESCALATION: Halting payment pipeline. Unknown vendor blocked before payout."
+      "Payment stopped. Unknown vendor needs a person to review before any payout."
     );
     return;
   }
@@ -239,7 +239,7 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_result",
     "mcp:fuzzy_match",
-    `FUZZY MATCH: Name similarity ${nameSimilarity.toFixed(1)}% via ${matchMethod} - Vendor ID ${vendorResultContent.vendorId} (${confidencePct.toFixed(1)}% confidence)`,
+    `Vendor matched: ${nameSimilarity.toFixed(1)}% name similarity (${matchMethod}). ID ${vendorResultContent.vendorId}, ${confidencePct.toFixed(1)}% confidence.`,
     vendorResultContent
   );
 
@@ -254,7 +254,7 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_call",
     transportLabel,
-    `TOOL CALL: executing check_bank_routing(vendorId="${bankArgs.vendorId}")`,
+    `Checking bank details for vendor ${bankArgs.vendorId}...`,
     {
       method: "tools/call",
       tool: "check_bank_routing",
@@ -271,7 +271,7 @@ async function* runWorkflow(
     yield createLogEntry(
       "warning",
       "mcp:anti_fraud_rules",
-      "SECURITY FLAG: Routing number mismatch detected against the approved enterprise payment profile.",
+      "Bank routing does not match the approved payment profile on file.",
       bankResultContent
     );
 
@@ -280,7 +280,7 @@ async function* runWorkflow(
     yield createLogEntry(
       "error",
       source,
-      `ESCALATION: Halting payment pipeline. Payout of $${invoice.invoiceAmount.toLocaleString()} blocked and flagged for manager review.`,
+      `Payment of $${invoice.invoiceAmount.toLocaleString()} held. Routing change flagged for manager review.`,
       {
         action: "ESCALATE_TO_COMPLIANCE",
         flaggedReason: "UNAUTHORIZED_BANK_ROUTING_CHANGE",
@@ -293,7 +293,7 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_result",
     "mcp:anti_fraud_rules",
-    "Bank routing check passed: Account details match the approved enterprise payment profile.",
+    "Bank details match the approved payment profile.",
     bankResultContent
   );
 
@@ -309,7 +309,7 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_call",
     transportLabel,
-    `TOOL CALL: executing post_erp_ledger(invoiceId="${ledgerArgs.invoiceId}")`,
+    `Posting invoice ${ledgerArgs.invoiceId} to the AP ledger...`,
     {
       method: "tools/call",
       tool: "post_erp_ledger",
@@ -325,7 +325,7 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_result",
     "mcp:erp_ledger",
-    `Ledger entry ${ledgerResult.ledgerEntryId} posted for invoice #${invoice.invoiceId}`,
+    `Posted ledger entry ${ledgerResult.ledgerEntryId} for invoice #${invoice.invoiceId}`,
     ledgerResult
   );
 
@@ -334,7 +334,7 @@ async function* runWorkflow(
   yield createLogEntry(
     "success",
     source,
-    `SUCCESS: Invoice #${invoice.invoiceId} approved and posted to the enterprise AP ledger.`,
+    `Invoice #${invoice.invoiceId} cleared checks and was posted to the AP ledger.`,
     {
       action: "POST_TO_ERP_LEDGER",
       status: ledgerResult.status,
@@ -363,7 +363,7 @@ export async function* runPayFlowAgentEngine(
   yield createLogEntry(
     "info",
     source,
-    `Ingested Invoice Payload #${invoice.invoiceId} for ${invoice.vendorName}`,
+    `Received invoice #${invoice.invoiceId} from ${invoice.vendorName}`,
     {
       invoiceAmount: `$${invoice.invoiceAmount.toLocaleString()}`,
       vendorTaxId: invoice.vendorTaxId,
@@ -420,7 +420,7 @@ export async function* runPayFlowAgentEngine(
     yield createLogEntry(
       "tool_call",
       "mcp:fastmcp_server",
-      "MCP: Discovering available tools via JSON-RPC (tools/list)...",
+      "Listing available tools...",
       {
         method: "tools/list",
         tools: listed.tools.map((t) => t.name),
@@ -431,7 +431,7 @@ export async function* runPayFlowAgentEngine(
     yield createLogEntry(
       "tool_result",
       "mcp:fastmcp_server",
-      `Discovered ${listed.tools.length} tools: ${listed.tools.map((t) => t.name).join(", ")}`,
+      `Ready: ${listed.tools.map((t) => t.name).join(", ")}`,
       {
         tools: listed.tools.map((t) => ({
           name: t.name,
@@ -453,7 +453,7 @@ export async function* runPayFlowAgentEngine(
       yield createLogEntry(
         "warning",
         "mcp:session",
-        "Live FastMCP session failed. Switching to in-project MCP tool runtime.",
+        "Live tool server unavailable. Switching to the hosted demo tools.",
         {
           mcpUrl,
           error: err instanceof Error ? err.message : "unknown",

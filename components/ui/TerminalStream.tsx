@@ -26,6 +26,8 @@ export interface TerminalStreamProps {
   title?: string;
   onClear?: () => void;
   emptyMessage?: React.ReactNode;
+  /** Label shown while the stream is active */
+  runningLabel?: string;
 }
 
 const LEVEL_STYLES: Record<
@@ -50,7 +52,7 @@ function PayloadDisclosure({ data }: { data: Record<string, unknown> }) {
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-slate-300 hover:text-white transition-colors"
       >
-        <span>View payload</span>
+        <span>View details</span>
         <ChevronDown
           className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
         />
@@ -67,9 +69,10 @@ function PayloadDisclosure({ data }: { data: Record<string, unknown> }) {
 export function TerminalStream({
   logs,
   isRunning = false,
-  title = "Execution stream",
+  title = "Live tool activity",
   onClear,
   emptyMessage,
+  runningLabel = "What's running",
 }: TerminalStreamProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -178,7 +181,7 @@ export function TerminalStream({
 
         {isRunning ? (
           <p className="mt-4 ml-6 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-violet-300 animate-pulse-line">
-            Streaming MCP events
+            {runningLabel}
           </p>
         ) : null}
       </div>

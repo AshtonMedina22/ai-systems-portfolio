@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { GlassBox } from "@/components/ui/GlassBox";
-import { TerminalStream, LogEntry } from "@/components/ui/TerminalStream";
+import { PayFlowOpsConsole } from "@/components/visualizers/PayFlowOpsConsole";
 import { Badge } from "@/components/ui/Badge";
 import { StatCard } from "@/components/ui/StatCard";
 import { SAMPLE_INVOICES, InvoicePayload } from "@/lib/payflow/types";
@@ -19,6 +19,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type { BadgeTone } from "@/components/ui/Badge";
+import type { LogEntry } from "@/components/ui/TerminalStream";
 
 type PresetKey = "clean" | "spoofed_bank" | "unknown_vendor";
 
@@ -31,26 +32,24 @@ const PRESETS: Array<{
 }> = [
   {
     key: "clean",
-    label: "Standard clean invoice (Acme Corp)",
-    detail: "Clean path - vendor match, bank OK, auto-post to AP ledger",
+    label: "Normal Acme invoice",
+    detail: "Vendor and bank details look good - should post to the ledger",
     icon: <CheckCircle2 className="h-4 w-4 text-emerald-700" />,
     activeClass:
       "border-violet-400 bg-violet-50 text-opal-main shadow-sm ring-1 ring-violet-200",
   },
   {
     key: "spoofed_bank",
-    label: "Spoofed fraud invoice (Acme Enterprize)",
-    detail:
-      "Fraud path - subtle vendor-name typo plus unauthorized bank routing change",
+    label: "Suspicious Acme invoice",
+    detail: "Slight vendor-name typo and a bank routing number that does not match",
     icon: <ShieldAlert className="h-4 w-4 text-rose-700" />,
     activeClass:
       "border-rose-300 bg-rose-50 text-opal-main shadow-sm ring-1 ring-rose-200",
   },
   {
     key: "unknown_vendor",
-    label: "Unregistered vendor invoice",
-    detail:
-      "Identity path - blocks payment when the enterprise registry has no match",
+    label: "Unknown vendor invoice",
+    detail: "Vendor is not in the company registry - payment should stop",
     icon: <UserX className="h-4 w-4 text-amber-700" />,
     activeClass:
       "border-amber-300 bg-amber-50 text-opal-main shadow-sm ring-1 ring-amber-200",
@@ -75,7 +74,7 @@ function HowThisWorks() {
         className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
       >
         <span className="text-sm font-semibold text-opal-main">
-          How this works for your business
+          What this is (in plain English)
         </span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-opal-label transition-transform ${open ? "rotate-180" : ""}`}
@@ -84,18 +83,22 @@ function HowThisWorks() {
       {open ? (
         <div className="border-t border-slate-300 px-4 py-3.5 text-sm leading-relaxed text-opal-muted space-y-3">
           <p>
-            Accounts payable teams burn hours keying invoices, verifying vendor
-            records, and checking bank routing details by hand. That slow process
-            leaves companies open to invoice spoofing and fraudulent bank account
-            changes before payouts go out.
+            Businesses burn hours typing vendor invoices and checking bank
+            details by hand. Worse, if someone sends an invoice with a slightly
+            altered bank routing number, money can get wired to the wrong place
+            before anyone notices.
           </p>
           <p>
-            PayFlow is an automated AP agent with financial safeguards - not an
-            unsupervised AI that decides payouts alone. Model Context Protocol
-            (MCP) exposes secure tools over JSON-RPC to enterprise ledgers (SAP,
-            NetSuite, Salesforce finance). Each run verifies the vendor, checks
-            bank routing, then posts to the AP ledger only if both checks pass.
-            Anything unusual is halted and escalated for manager review.
+            This demo is an automated invoice checker. It looks at an incoming
+            vendor bill, cross-checks it against your internal vendor list with
+            smart text matching, and flags anything suspicious - like a
+            mismatched routing number or a typo in a vendor name - before a
+            human ever hits approve. The right-hand panel shows each check as
+            it runs.
+          </p>
+          <p>
+            Same shape of work as ERP and accounting oversight: vendor
+            compliance before money leaves the building.
           </p>
         </div>
       ) : null}
@@ -210,21 +213,19 @@ export default function PayFlowPage() {
   return (
     <div className="min-h-screen">
       <GlassBox
-        title="PayFlow AP & Fraud Prevention"
-        badge="Project 1 - Enterprise Accounts Payable Automation & Anti-Fraud Suite"
-        description="Helps reduce manual invoice entry by validating vendors against core ledger systems in real time and flagging suspicious routing changes before payouts are released."
+        title="PayFlow"
+        badge="Project 1 - Automated invoice & vendor verification"
+        description="Accounts payable automation that cuts down on manual data entry and flags fraudulent vendor bank changes before money leaves the bank. Cross-checks incoming bills against historical records using fuzzy matching to catch spoofed invoices."
         headerExtra={<HowThisWorks />}
         isRunning={isRunning}
-        controlLabel="User action"
-        controlHint="Select invoice payload"
+        controlLabel="Try it"
+        controlHint="Pick an invoice"
         controlPanel={
           <div className="space-y-6">
             <ExecutiveKpiStrip logs={logs} isRunning={isRunning} />
 
             <div>
-              <label className="label-opal mb-2.5 block">
-                Select invoice payload
-              </label>
+              <label className="label-opal mb-2.5 block">Pick an invoice</label>
               <div className="grid grid-cols-1 gap-2.5">
                 {PRESETS.map((preset) => {
                   const active = selectedPreset === preset.key;
@@ -315,25 +316,27 @@ export default function PayFlowPage() {
 
             {showImpact ? (
               <div className="rounded-xl border border-slate-300 bg-violet-50/50 px-4 py-3.5 space-y-3">
-                <p className="label-opal">Business impact summary</p>
+                <p className="label-opal">What happened</p>
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="font-medium text-opal-label">Risk level</span>
+                  <span className="font-medium text-opal-label">Risk</span>
                   <Badge tone={RISK_BADGE[kpis.riskLevel]}>
                     {kpis.riskLabel}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="font-medium text-opal-label">Time saved</span>
+                  <span className="font-medium text-opal-label">
+                    Time this may save
+                  </span>
                   <span className="font-semibold text-opal-main">
                     {kpis.timeSavedMinutes != null
-                      ? `~${kpis.timeSavedMinutes} minutes`
+                      ? `About ${kpis.timeSavedMinutes} minutes`
                       : isRunning
-                        ? "Calculating..."
+                        ? "Working..."
                         : "-"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="font-medium text-opal-label">Status</span>
+                  <span className="font-medium text-opal-label">Result</span>
                   <span className="text-right font-semibold text-opal-main">
                     {kpis.statusLabel ?? (isRunning ? "In progress" : "-")}
                   </span>
@@ -341,17 +344,21 @@ export default function PayFlowPage() {
               </div>
             ) : null}
 
+            <div className="rounded-xl border border-slate-300 bg-white px-4 py-3.5">
+              <p className="label-opal mb-2">Built with</p>
+              <p className="text-sm leading-relaxed text-opal-muted">
+                FastMCP (verify_vendor_entity, check_bank_routing,
+                post_erp_ledger) - deterministic checks - SSE stream
+              </p>
+            </div>
+
             <button
               type="button"
               onClick={handleRunAgent}
               disabled={isRunning}
               className="group w-full inline-flex items-center justify-center gap-2 rounded-xl bg-opal-purple px-4 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-opal-violet disabled:opacity-50"
             >
-              <span>
-                {isRunning
-                  ? "Running AP verification..."
-                  : "Run Automated AP Verification"}
-              </span>
+              <span>{isRunning ? "Checking invoice..." : "Run invoice check"}</span>
               {!isRunning ? (
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               ) : null}
@@ -359,24 +366,11 @@ export default function PayFlowPage() {
           </div>
         }
         streamPanel={
-          <TerminalStream
+          <PayFlowOpsConsole
             logs={logs}
             isRunning={isRunning}
-            title="Live glass-box MCP terminal"
+            invoice={activeInvoice}
             onClear={() => setLogs([])}
-            emptyMessage={
-              <p>
-                Run Automated AP Verification to stream MCP{" "}
-                <span className="font-mono text-[13px] font-medium text-violet-300">
-                  tools/list
-                </span>
-                ,{" "}
-                <span className="font-mono text-[13px] font-medium text-violet-300">
-                  tools/call
-                </span>
-                , fuzzy match scores, and fraud escalations here.
-              </p>
-            }
           />
         }
       />

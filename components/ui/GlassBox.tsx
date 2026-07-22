@@ -12,7 +12,7 @@ export interface GlassBoxProps {
   controlHint?: string;
 }
 
-/** Split workspace: executive controls (light) + engineering console (slate). */
+/** Split view: business controls (left) + live activity log (right). */
 export function GlassBox({
   title,
   badge,
@@ -21,8 +21,8 @@ export function GlassBox({
   controlPanel,
   streamPanel,
   isRunning = false,
-  controlLabel = "Control",
-  controlHint = "Operator input",
+  controlLabel = "Try it",
+  controlHint = "Your choices",
 }: GlassBoxProps) {
   return (
     <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14">

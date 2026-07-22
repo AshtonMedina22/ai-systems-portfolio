@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Legacy path - Enterprise Guardrails now lives at /guardrails. */
+/** Legacy path - Project 3 now lives at /workflow. */
 export default function EvalsRedirectPage() {
-  redirect("/guardrails");
+  redirect("/workflow");
 }
