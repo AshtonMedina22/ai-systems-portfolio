@@ -11,6 +11,7 @@ const config: Config = {
         paper: "var(--paper)",
         ink: "var(--ink)",
         muted: "var(--muted)",
+        label: "var(--text-label)",
         accent: {
           DEFAULT: "var(--accent)",
           soft: "var(--accent-soft)",
@@ -21,6 +22,22 @@ const config: Config = {
         ok: "var(--ok)",
         warn: "var(--warn)",
         danger: "var(--danger)",
+        opal: {
+          canvas: "#FBFBFC",
+          card: "#FFFFFF",
+          main: "#0F172A",
+          muted: "#334155",
+          label: "#1E293B",
+          purple: "#7C3AED",
+          violet: "#9333EA",
+          rose: "#E11D48",
+          amber: "#D97706",
+          terminal: "#1E293B",
+        },
+      },
+      boxShadow: {
+        "opal-soft": "0 12px 32px -12px rgba(100, 116, 139, 0.22)",
+        "opal-hover": "0 20px 40px -14px rgba(124, 58, 237, 0.18)",
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
@@ -33,7 +50,7 @@ const config: Config = {
           to: { opacity: "1", transform: "translateY(0)" },
         },
         "pulse-line": {
-          "0%, 100%": { opacity: "0.35" },
+          "0%, 100%": { opacity: "0.4" },
           "50%": { opacity: "1" },
         },
       },

@@ -1,0 +1,11 @@
+﻿{
+  "mcpServers": {
+    "browser-devtools": {
+      "command": "npx",
+      "args": ["-y", "@ironbee-ai/devtools"],
+      "env": {
+        "BROWSER_DEVTOOLS_INSTALL_CHROMIUM": "true"
+      }
+    }
+  }
+}

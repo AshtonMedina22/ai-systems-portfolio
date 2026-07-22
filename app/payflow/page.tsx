@@ -1,17 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useMemo, useState } from "react";
 import { GlassBox } from "@/components/ui/GlassBox";
 import { TerminalStream, LogEntry } from "@/components/ui/TerminalStream";
+import { Badge } from "@/components/ui/Badge";
+import { StatCard } from "@/components/ui/StatCard";
 import { SAMPLE_INVOICES, InvoicePayload } from "@/lib/payflow/types";
+import {
+  deriveExecutiveKpis,
+  RiskTone,
+} from "@/lib/payflow/executive-summary";
 import {
   ShieldAlert,
   CheckCircle2,
   FileText,
   ArrowRight,
   UserX,
+  ChevronDown,
 } from "lucide-react";
+import type { BadgeTone } from "@/components/ui/Badge";
 
 type PresetKey = "clean" | "spoofed_bank" | "unknown_vendor";
 
@@ -24,26 +31,105 @@ const PRESETS: Array<{
 }> = [
   {
     key: "clean",
-    label: "Clean invoice",
-    detail: "Approve + post ledger",
-    icon: <CheckCircle2 className="h-4 w-4 text-ok" />,
-    activeClass: "border-accent bg-accent-soft/60 text-ink",
+    label: "Standard Acme Corp invoice",
+    detail: "Clean path - shows automated processing and auto-pay",
+    icon: <CheckCircle2 className="h-4 w-4 text-emerald-700" />,
+    activeClass:
+      "border-violet-400 bg-violet-50 text-opal-main shadow-sm ring-1 ring-violet-200",
   },
   {
     key: "spoofed_bank",
-    label: "Spoofed bank",
-    detail: "Unauthorized routing",
-    icon: <ShieldAlert className="h-4 w-4 text-danger" />,
-    activeClass: "border-danger/50 bg-danger/5 text-ink",
+    label: "Unrecognized routing number",
+    detail: "Fraud path - shows the anti-fraud shield before payout",
+    icon: <ShieldAlert className="h-4 w-4 text-rose-700" />,
+    activeClass:
+      "border-rose-300 bg-rose-50 text-opal-main shadow-sm ring-1 ring-rose-200",
   },
   {
     key: "unknown_vendor",
-    label: "Unknown vendor",
-    detail: "Unregistered entity",
-    icon: <UserX className="h-4 w-4 text-warn" />,
-    activeClass: "border-warn/50 bg-warn/5 text-ink",
+    label: "Unregistered vendor invoice",
+    detail: "Identity path - blocks payment when the enterprise registry has no match",
+    icon: <UserX className="h-4 w-4 text-amber-700" />,
+    activeClass:
+      "border-amber-300 bg-amber-50 text-opal-main shadow-sm ring-1 ring-amber-200",
   },
 ];
+
+const RISK_BADGE: Record<RiskTone, BadgeTone> = {
+  pending: "neutral",
+  low: "ok",
+  high: "danger",
+  blocked: "danger",
+};
+
+function HowThisWorks() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="card-opal rounded-2xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+      >
+        <span className="text-sm font-semibold text-opal-main">
+          How this works for your business
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-opal-label transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open ? (
+        <div className="border-t border-slate-300 px-4 py-3.5 text-sm leading-relaxed text-opal-muted space-y-3">
+          <p>
+            PayFlow is built with financial safeguards, not an unsupervised AI
+            that decides payouts on its own. Model Context Protocol (MCP) is a
+            secure bridge to enterprise ERP and core banking ledgers - systems
+            like SAP, NetSuite, and Salesforce finance modules. The AI does not
+            get open access to company funds.
+          </p>
+          <p>
+            A fixed checklist runs every time: verify the vendor, check bank
+            routing, then post to the AP ledger only if both checks pass.
+            Anything unusual is blocked and escalated for human review. That
+            predictability is what finance and compliance teams need for audit
+            trails.
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ExecutiveKpiStrip({
+  logs,
+  isRunning,
+}: {
+  logs: LogEntry[];
+  isRunning: boolean;
+}) {
+  const kpis = useMemo(() => deriveExecutiveKpis(logs), [logs]);
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <StatCard
+        label="Fraud risk"
+        value={<Badge tone={RISK_BADGE[kpis.riskLevel]}>{kpis.riskLabel}</Badge>}
+      />
+      <StatCard
+        label="Vendor confidence"
+        value={
+          kpis.vendorConfidence ?? (isRunning ? "Checking..." : "Not checked")
+        }
+        hint={kpis.vendorName ?? undefined}
+      />
+      <StatCard
+        label="Action taken"
+        value={kpis.actionLabel ?? (isRunning ? "Running checks..." : "Idle")}
+      />
+    </div>
+  );
+}
 
 export default function PayFlowPage() {
   const [selectedPreset, setSelectedPreset] = useState<PresetKey>("clean");
@@ -52,6 +138,9 @@ export default function PayFlowPage() {
   );
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+
+  const kpis = useMemo(() => deriveExecutiveKpis(logs), [logs]);
+  const showImpact = logs.length > 0 || isRunning;
 
   const handleSelectPreset = (key: PresetKey) => {
     setSelectedPreset(key);
@@ -108,7 +197,7 @@ export default function PayFlowPage() {
           level: "error",
           source: "client:payflow",
           message:
-            "Connection lost or stream interrupted while processing AP Agent workflow.",
+            "Connection lost or stream interrupted while processing the AP workflow.",
         },
       ]);
     } finally {
@@ -118,27 +207,21 @@ export default function PayFlowPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
-        <Link
-          href="/"
-          className="inline-flex font-mono text-[11px] uppercase tracking-[0.16em] text-muted hover:text-accent transition-colors"
-        >
-          Back to portfolio
-        </Link>
-      </div>
-
       <GlassBox
         title="PayFlow"
-        badge="Project 1 - FastMCP"
-        description="Select an AP invoice scenario. The right panel streams MCP tools/list and tools/call for vendor checks, bank anti-fraud, and ledger posting."
+        badge="Project 1 - MCP - Accounts Payable & Anti-Fraud"
+        description="Plugs into SAP, NetSuite, and core banking ledgers via MCP. Governed steps verify vendor identity, bank routing, and fraud flags - then post to the enterprise AP ledger only when checks pass."
+        headerExtra={<HowThisWorks />}
         isRunning={isRunning}
+        controlLabel="Business overview"
+        controlHint="Scenario input"
         controlPanel={
           <div className="space-y-6">
+            <ExecutiveKpiStrip logs={logs} isRunning={isRunning} />
+
             <div>
-              <label className="mb-2.5 block font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-muted">
-                Scenario
-              </label>
-              <div className="grid grid-cols-1 gap-2">
+              <label className="label-opal mb-2.5 block">Select scenario</label>
+              <div className="grid grid-cols-1 gap-2.5">
                 {PRESETS.map((preset) => {
                   const active = selectedPreset === preset.key;
                   return (
@@ -146,18 +229,18 @@ export default function PayFlowPage() {
                       key={preset.key}
                       type="button"
                       onClick={() => handleSelectPreset(preset.key)}
-                      className={`flex items-start gap-3 border px-3.5 py-3 text-left transition-colors duration-200 ${
+                      className={`flex items-start gap-3 rounded-xl border px-3.5 py-3.5 text-left transition-all duration-200 ${
                         active
                           ? preset.activeClass
-                          : "border-line bg-white/40 text-muted hover:border-accent/40 hover:text-ink"
+                          : "border-slate-300 bg-white text-opal-muted hover:border-violet-300 hover:bg-violet-50/40 hover:text-opal-main"
                       }`}
                     >
                       <span className="mt-0.5">{preset.icon}</span>
                       <span className="min-w-0">
-                        <span className="block text-sm font-medium text-ink">
+                        <span className="block text-sm font-semibold text-opal-main">
                           {preset.label}
                         </span>
-                        <span className="block text-xs text-muted mt-0.5">
+                        <span className="block text-xs text-opal-muted mt-1 leading-relaxed">
                           {preset.detail}
                         </span>
                       </span>
@@ -167,49 +250,49 @@ export default function PayFlowPage() {
               </div>
             </div>
 
-            <div className="border border-line bg-white/50 px-4 py-3.5">
-              <div className="flex items-center justify-between border-b border-line pb-2.5 mb-2.5">
-                <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-muted">
-                  <FileText className="h-3.5 w-3.5" />
+            <div className="rounded-xl border border-slate-300 bg-white px-4 py-3.5 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 mb-2.5">
+                <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-opal-label">
+                  <FileText className="h-3.5 w-3.5 text-opal-purple" />
                   {activeInvoice.invoiceId}
                 </span>
-                <span className="font-display text-lg text-accent-deep">
+                <span className="font-display text-xl font-medium text-opal-violet">
                   ${activeInvoice.invoiceAmount.toLocaleString()}
                 </span>
               </div>
 
-              <dl className="space-y-1.5 text-[13px]">
+              <dl className="space-y-2 text-[13px]">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-muted shrink-0">Vendor</dt>
-                  <dd className="text-right text-ink">
+                  <dt className="font-medium text-opal-label">Vendor</dt>
+                  <dd className="text-right font-medium text-opal-main">
                     {activeInvoice.vendorName}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-muted">Tax ID</dt>
+                  <dt className="font-medium text-opal-label">Tax ID</dt>
                   <dd
-                    className={`font-mono text-[12px] ${
+                    className={`font-mono text-[12px] font-semibold ${
                       selectedPreset === "unknown_vendor"
-                        ? "text-warn font-medium"
-                        : "text-ink"
+                        ? "text-amber-700"
+                        : "text-opal-main"
                     }`}
                   >
                     {activeInvoice.vendorTaxId}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-muted">Bank</dt>
-                  <dd className="text-ink">
+                  <dt className="font-medium text-opal-label">Bank</dt>
+                  <dd className="font-medium text-opal-main">
                     {activeInvoice.bankDetails.bankName}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-muted">Routing</dt>
+                  <dt className="font-medium text-opal-label">Routing</dt>
                   <dd
-                    className={`font-mono text-[12px] ${
+                    className={`font-mono text-[12px] font-semibold ${
                       selectedPreset === "spoofed_bank"
-                        ? "text-danger font-medium"
-                        : "text-ink"
+                        ? "text-rose-700"
+                        : "text-opal-main"
                     }`}
                   >
                     {activeInvoice.bankDetails.routingNumber}
@@ -218,14 +301,42 @@ export default function PayFlowPage() {
               </dl>
             </div>
 
+            {showImpact ? (
+              <div className="rounded-xl border border-slate-300 bg-violet-50/50 px-4 py-3.5 space-y-3">
+                <p className="label-opal">Business impact summary</p>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="font-medium text-opal-label">Risk level</span>
+                  <Badge tone={RISK_BADGE[kpis.riskLevel]}>
+                    {kpis.riskLabel}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="font-medium text-opal-label">Time saved</span>
+                  <span className="font-semibold text-opal-main">
+                    {kpis.timeSavedMinutes != null
+                      ? `~${kpis.timeSavedMinutes} minutes`
+                      : isRunning
+                        ? "Calculating..."
+                        : "-"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="font-medium text-opal-label">Status</span>
+                  <span className="text-right font-semibold text-opal-main">
+                    {kpis.statusLabel ?? (isRunning ? "In progress" : "-")}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+
             <button
               type="button"
               onClick={handleRunAgent}
               disabled={isRunning}
-              className="group w-full inline-flex items-center justify-center gap-2 bg-accent px-4 py-3.5 text-sm font-medium text-white transition-colors duration-200 hover:bg-accent-deep disabled:opacity-50"
+              className="group w-full inline-flex items-center justify-center gap-2 rounded-xl bg-opal-purple px-4 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-opal-violet disabled:opacity-50"
             >
               <span>
-                {isRunning ? "Running MCP tools…" : "Run PayFlow agent"}
+                {isRunning ? "Running checks..." : "Run PayFlow agent"}
               </span>
               {!isRunning ? (
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -237,7 +348,7 @@ export default function PayFlowPage() {
           <TerminalStream
             logs={logs}
             isRunning={isRunning}
-            title="MCP receipt"
+            title="Technical execution"
             onClear={() => setLogs([])}
           />
         }

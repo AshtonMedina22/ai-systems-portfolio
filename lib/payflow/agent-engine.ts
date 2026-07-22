@@ -147,7 +147,7 @@ async function* runWorkflow(
     yield createLogEntry(
       "error",
       "mcp:registry_check",
-      `Alert: vendor '${invoice.vendorName}' is not registered in the ERP.`,
+      `Alert: vendor '${invoice.vendorName}' is not registered in the enterprise vendor registry.`,
       vendorResultContent
     );
     yield createLogEntry(
@@ -164,7 +164,7 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_result",
     "mcp:registry_check",
-    `ERP Match Confirmed: Vendor ID ${vendorResultContent.vendorId} (${confidencePct}% confidence)`,
+    `Enterprise registry match confirmed: Vendor ID ${vendorResultContent.vendorId} (${confidencePct}% confidence)`,
     vendorResultContent
   );
 
@@ -217,7 +217,7 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_result",
     "mcp:anti_fraud_rules",
-    "Bank Routing Check Passed: Account details match primary ERP payment profile.",
+    "Bank routing check passed: Account details match the approved enterprise payment profile.",
     bankResultContent
   );
 
@@ -257,7 +257,7 @@ async function* runWorkflow(
   yield createLogEntry(
     "success",
     source,
-    `SUCCESS: Invoice #${invoice.invoiceId} approved and posted to ERP AP ledger.`,
+    `SUCCESS: Invoice #${invoice.invoiceId} approved and posted to the enterprise AP ledger.`,
     {
       action: "POST_TO_ERP_LEDGER",
       status: ledgerResult.status,

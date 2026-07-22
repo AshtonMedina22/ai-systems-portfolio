@@ -1,4 +1,4 @@
-"""Shared ERP vendor registry and anti-fraud business logic for PayFlow MCP tools."""
+"""Shared enterprise vendor registry and anti-fraud logic for PayFlow MCP tools."""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def fuzzy_name_score(a: str, b: str) -> float:
 
 
 def verify_vendor_entity(vendor_name: str, tax_id: str) -> dict[str, Any]:
-    """Exact tax-ID match or fuzzy official-name match against ERP registry."""
+    """Exact tax-ID match or fuzzy official-name match against enterprise registry."""
     tax_match = next((v for v in ERP_VENDOR_REGISTRY if v.tax_id == tax_id), None)
     if tax_match:
         name_score = fuzzy_name_score(vendor_name, tax_match.official_name)
@@ -99,7 +99,7 @@ def check_bank_routing(
         return {
             "error": True,
             "code": -32602,
-            "message": f"Vendor ID {vendor_id} not found in ERP.",
+            "message": f"Vendor ID {vendor_id} not found in the enterprise registry.",
         }
 
     is_routing_match = record.approved_routing_number == routing_number
@@ -110,7 +110,7 @@ def check_bank_routing(
             "isMatch": True,
             "riskLevel": "LOW",
             "riskScore": 0.02,
-            "message": "Bank details match verified primary ERP account profile.",
+            "message": "Bank details match the verified primary enterprise payment profile.",
         }
 
     return {

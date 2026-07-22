@@ -3,39 +3,39 @@
 import { useState } from "react";
 import { GlassBox } from "@/components/ui/GlassBox";
 import { TerminalStream } from "@/components/ui/TerminalStream";
-import { Activity, ShieldCheck, UserCheck } from "lucide-react";
+import { CreditCard, FileLock2, IdCard } from "lucide-react";
 
 const SCENARIOS = [
   {
-    key: "latency",
-    label: "API latency spike",
-    detail: "Shows agent debate over cache vs scale remediation",
-    icon: <Activity className="h-4 w-4 text-amber-700" />,
+    key: "ssn",
+    label: "SSN in prompt payload",
+    detail: "Redacts Social Security numbers before the model sees them",
+    icon: <IdCard className="h-4 w-4 text-rose-700" />,
   },
   {
-    key: "crash",
-    label: "Service crash loop",
-    detail: "Drafts a rollback plan with manager approval required",
-    icon: <ShieldCheck className="h-4 w-4 text-rose-700" />,
+    key: "card",
+    label: "Credit card in chat input",
+    detail: "Strips PAN data and flags a compliance event",
+    icon: <CreditCard className="h-4 w-4 text-amber-700" />,
   },
   {
-    key: "approval",
-    label: "Human sign-off gate",
-    detail: "Blocks production changes until a manager approves",
-    icon: <UserCheck className="h-4 w-4 text-emerald-700" />,
+    key: "record",
+    label: "Confidential record leak test",
+    detail: "Blocks confidential fields from leaving the trust boundary",
+    icon: <FileLock2 className="h-4 w-4 text-emerald-700" />,
   },
 ] as const;
 
-export default function SrePage() {
+export default function GuardrailsPage() {
   const [selected, setSelected] = useState<(typeof SCENARIOS)[number]["key"]>(
-    "latency"
+    "ssn"
   );
 
   return (
     <GlassBox
-      title="Self-Healing SRE"
-      badge="Project 2 - LangGraph - Autonomous Incident Manager"
-      description="24/7 system downtime prevention and incident recovery. Collaborative agents diagnose crashes and draft repair plans - with mandatory human-manager approval before anything reaches production."
+      title="Enterprise Guardrails"
+      badge="Project 3 - Evals - Data Privacy & Safety Suite"
+      description="Automated PII redaction and AI quality inspection. Sensitive fields are stripped before inputs reach LLMs - protecting customers and guaranteeing regulatory compliance."
       controlLabel="Business overview"
       controlHint="Scenario input"
       controlPanel={
@@ -43,8 +43,8 @@ export default function SrePage() {
           <div className="rounded-xl border border-slate-200/80 bg-violet-50/60 px-4 py-3.5 space-y-2">
             <p className="label-opal">Business impact</p>
             <p className="text-sm leading-relaxed text-opal-muted">
-              Cuts outage downtime from hours to seconds with automated triage
-              and mandatory manager sign-off.
+              Eliminates compliance and data-leak risk so SSNs, cards, and
+              confidential records never leave the enterprise trust boundary.
             </p>
           </div>
 
@@ -82,8 +82,8 @@ export default function SrePage() {
           <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-3.5">
             <p className="label-opal mb-2">Enterprise connectors</p>
             <p className="text-sm leading-relaxed text-opal-muted">
-              LangGraph multi-agent debate - Human-in-the-loop sign-off - AWS
-              and enterprise cloud health
+              Promptfoo evals - Real-time PII sanitizer - HIPAA and GDPR
+              compliance checks
             </p>
           </div>
 
@@ -92,7 +92,7 @@ export default function SrePage() {
             disabled
             className="w-full rounded-xl bg-opal-purple/70 px-4 py-3.5 text-sm font-semibold text-white opacity-70 cursor-not-allowed"
           >
-            Run incident demo (coming next)
+            Run guardrails demo (coming next)
           </button>
         </div>
       }
@@ -102,8 +102,8 @@ export default function SrePage() {
           title="Technical execution"
           emptyMessage={
             <p>
-              Live LangGraph state transitions and agent debate traces will
-              stream here once Project 2 is wired.
+              Live evaluation outputs and PII redaction traces will stream here
+              once Project 3 is wired.
             </p>
           }
         />

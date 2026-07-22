@@ -31,7 +31,7 @@ mcp = FastMCP(
 
 @mcp.tool(name="verify_vendor_entity")
 def tool_verify_vendor_entity(vendorName: str, taxId: str) -> dict[str, Any]:
-    """Resolve vendor identity against the ERP vendor registry (exact tax ID + fuzzy name)."""
+    """Resolve vendor identity against the enterprise vendor registry (exact tax ID + fuzzy name)."""
     return verify_vendor_entity(vendorName, taxId)
 
 
@@ -39,7 +39,7 @@ def tool_verify_vendor_entity(vendorName: str, taxId: str) -> dict[str, Any]:
 def tool_check_bank_routing(
     vendorId: str, routingNumber: str, accountNumber: str
 ) -> dict[str, Any]:
-    """Compare submitted bank details to the authorized ERP payment profile."""
+    """Compare submitted bank details to the authorized enterprise payment profile."""
     result = check_bank_routing(vendorId, routingNumber, accountNumber)
     if result.get("error"):
         raise ValueError(result["message"])
@@ -50,7 +50,7 @@ def tool_check_bank_routing(
 def tool_post_erp_ledger(
     invoiceId: str, vendorId: str, amount: float, currency: str = "USD"
 ) -> dict[str, Any]:
-    """Post an approved invoice to the ERP accounts-payable ledger."""
+    """Post an approved invoice to the enterprise accounts-payable ledger."""
     return post_erp_ledger(invoiceId, vendorId, amount, currency)
 
 
@@ -82,7 +82,7 @@ async def tools_manifest(_request: Request) -> Response:
             "tools": [
                 {
                     "name": "verify_vendor_entity",
-                    "description": "ERP vendor identity resolution",
+                    "description": "Enterprise vendor identity resolution",
                 },
                 {
                     "name": "check_bank_routing",

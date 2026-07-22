@@ -129,7 +129,7 @@ export function toolCheckBankRouting(
       id,
       error: {
         code: -32602,
-        message: `Vendor ID ${args.vendorId} not found in ERP.`,
+        message: `Vendor ID ${args.vendorId} not found in the enterprise registry.`,
       },
     };
   }
@@ -144,7 +144,7 @@ export function toolCheckBankRouting(
       isMatch: true,
       riskLevel: "LOW",
       riskScore: 0.02,
-      message: "Bank details match verified primary ERP account profile.",
+      message: "Bank details match the verified primary enterprise payment profile.",
     });
   }
 

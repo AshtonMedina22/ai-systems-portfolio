@@ -4,17 +4,30 @@
 
 :root {
   color-scheme: light;
-  --paper: #e6e9ef;
-  --ink: #1a2332;
-  --muted: #5a6577;
-  --accent: #1f5c99;
-  --accent-soft: #d6e4f5;
-  --accent-deep: #163e6b;
-  --line: #c5ccd8;
-  --surface: #f3f5f8;
-  --ok: #0f6b4c;
-  --warn: #b54708;
-  --danger: #b42318;
+  --bg-canvas: #fbfbfc;
+  --card-surface: #ffffff;
+  --text-main: #0f172a;
+  /* Body secondary - readable, not washed out */
+  --text-muted: #334155;
+  /* Section labels / eyebrows on light - slate-800, never faint */
+  --text-label: #1e293b;
+  --accent-purple: #7c3aed;
+  --accent-violet: #9333ea;
+  --accent-rose: #e11d48;
+  --accent-amber: #d97706;
+  --terminal: #1e293b;
+  --ok: #047857;
+  --warn: #b45309;
+  --danger: #be123c;
+  --line: #cbd5e1;
+
+  --paper: var(--bg-canvas);
+  --ink: var(--text-main);
+  --muted: var(--text-muted);
+  --accent: var(--accent-purple);
+  --accent-soft: #ede9fe;
+  --accent-deep: var(--accent-violet);
+  --surface: #ffffff;
 }
 
 html,
@@ -25,25 +38,7 @@ body {
 body {
   margin: 0;
   color: var(--ink);
-  background-color: var(--paper);
-  background-image:
-    radial-gradient(
-      ellipse 120% 80% at 10% -10%,
-      rgba(31, 92, 153, 0.09),
-      transparent 55%
-    ),
-    radial-gradient(
-      ellipse 90% 60% at 100% 0%,
-      rgba(26, 35, 50, 0.05),
-      transparent 50%
-    ),
-    linear-gradient(
-      180deg,
-      #eef1f6 0%,
-      var(--paper) 40%,
-      #dfe3eb 100%
-    );
-  background-attachment: fixed;
+  background-color: var(--bg-canvas);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -53,28 +48,102 @@ body {
 }
 
 ::selection {
-  background: var(--accent-soft);
-  color: var(--accent-deep);
+  background: #ddd6fe;
+  color: #5b21b6;
 }
 
-/* Subtle paper grain */
-.paper-grain::before {
-  content: "";
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+.bg-ambient-glow,
+.bg-opal-glow {
+  background-color: var(--bg-canvas);
+  background-image:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(243, 240, 255, 0.95) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 85% 60%,
+      rgba(253, 242, 248, 0.75) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 70% 85%,
+      rgba(255, 247, 237, 0.7) 0%,
+      transparent 42%
+    );
+  background-attachment: fixed;
+}
+
+/* Section labels on light surfaces - high contrast */
+.label-opal {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-label);
+}
+
+/* Brand eyebrows - Electric Amethyst, clearly visible */
+.eyebrow-opal {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-purple);
+}
+
+.card-opal {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 10px 30px -10px rgba(148, 163, 184, 0.22);
+}
+
+.card-opal-interactive {
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.card-opal-interactive:hover {
+  border-color: rgba(124, 58, 237, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 20px 40px -14px rgba(124, 58, 237, 0.22);
+  transform: translateY(-1px);
 }
 
 .workspace-shell {
   position: relative;
   z-index: 1;
+  border: 1px solid rgba(148, 163, 184, 0.65);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 18px 40px -16px rgba(100, 116, 139, 0.3);
 }
 
 .workspace-shell[data-running="true"] {
-  outline: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  outline-offset: 4px;
-  transition: outline-color 200ms ease;
+  box-shadow:
+    0 0 0 2px rgba(124, 58, 237, 0.4),
+    0 20px 44px -16px rgba(124, 58, 237, 0.28);
+}
+
+.console-shell {
+  background: var(--terminal);
+  color: #e2e8f0;
+}
+
+/* Console meta labels - readable on platinum slate */
+.label-console {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #cbd5e1;
 }

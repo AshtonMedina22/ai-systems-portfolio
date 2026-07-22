@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
 
 const display = Fraunces({
@@ -23,9 +25,9 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Systems Portfolio",
+  title: "Ashton Medina - AI Solutions Architect",
   description:
-    "Interactive demos of MCP tools, multi-agent workflows, and evaluation gates.",
+    "Production-ready AI systems bridging LLMs with SAP, NetSuite, Salesforce, and cloud infrastructure - with deterministic guardrails, PII privacy, and human oversight.",
 };
 
 export default function RootLayout({
@@ -35,8 +37,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
-      <body className="paper-grain min-h-screen font-sans text-ink antialiased">
-        {children}
+      <body className="bg-opal-glow min-h-screen font-sans text-ink antialiased">
+        <div className="flex min-h-screen flex-col">
+          <Navbar />
+          <div className="flex-1">{children}</div>
+          <Footer />
+        </div>
       </body>
     </html>
   );
