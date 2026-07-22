@@ -4,49 +4,26 @@ export function Footer() {
   return (
     <footer className="relative z-10">
       <div className="bg-opal-terminal text-white">
-        <div className="mx-auto max-w-5xl px-6 py-12 text-center sm:py-14">
-          <p className="font-display text-xl font-medium tracking-tight text-balance sm:text-2xl">
-            Looking to streamline your operations or hire an AI Solutions
-            Architect?
-          </p>
-          <p className="mt-3 text-[15px] leading-relaxed text-slate-300 sm:text-base">
-            Let&apos;s talk about your systems.
+        <div className="mx-auto max-w-3xl px-6 py-14 text-center sm:py-16">
+          <h2 className="font-display text-2xl font-medium tracking-tight text-balance sm:text-3xl">
+            Let&apos;s Talk
+          </h2>
+          <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-slate-300 sm:text-base">
+            If you&apos;re looking for someone who understands both the
+            operational side of a business and how to build the software systems
+            that run it, let&apos;s connect. I&apos;m always open to discussing
+            new opportunities or consulting projects.
           </p>
 
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-x-2 sm:gap-y-3">
+          <div className="mt-8">
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
+              Email
+            </p>
             <a
               href={contactMailto}
-              className="inline-flex w-full items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-opal-terminal transition-colors hover:bg-violet-100 sm:w-auto"
+              className="mt-2 inline-block text-base font-semibold text-white underline-offset-4 transition-colors hover:text-violet-200 hover:underline sm:text-lg"
             >
-              Email Ashton
-            </a>
-            <span
-              className="hidden text-slate-500 sm:inline"
-              aria-hidden
-            >
-              |
-            </span>
-            <a
-              href={site.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-slate-500 bg-transparent px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-violet-300 hover:bg-white/10 sm:w-auto"
-            >
-              Connect on LinkedIn
-            </a>
-            <span
-              className="hidden text-slate-500 sm:inline"
-              aria-hidden
-            >
-              |
-            </span>
-            <a
-              href={site.githubRepo}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-slate-500 bg-transparent px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-violet-300 hover:bg-white/10 sm:w-auto"
-            >
-              View GitHub Repo
+              {site.email}
             </a>
           </div>
         </div>

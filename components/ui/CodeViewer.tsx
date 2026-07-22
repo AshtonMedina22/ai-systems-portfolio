@@ -96,7 +96,7 @@ export function DemoPanelTabs({
   return (
     <div className="flex h-full min-h-[420px] flex-col">
       <div
-        className="flex items-center gap-1 border-b border-slate-500/50 bg-slate-900/90 px-3 py-2"
+        className="flex items-center justify-between gap-3 border-b border-slate-500/50 bg-slate-900/70 px-4 py-2"
         role="tablist"
         aria-label="Console view"
       >
@@ -105,26 +105,26 @@ export function DemoPanelTabs({
           role="tab"
           aria-selected={tab === "live"}
           onClick={() => setTab("live")}
-          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+          className={`text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${
             tab === "live"
-              ? "bg-white/10 text-white"
-              : "text-slate-400 hover:text-slate-200"
+              ? "text-white"
+              : "text-slate-500 hover:text-slate-300"
           }`}
         >
-          Live Visual Console
+          Live console
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={tab === "source"}
           onClick={() => setTab("source")}
-          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+          className={`text-[11px] font-medium tracking-wide transition-colors ${
             tab === "source"
-              ? "bg-white/10 text-white"
-              : "text-slate-400 hover:text-slate-200"
+              ? "text-violet-200 underline underline-offset-4"
+              : "text-slate-500 hover:text-slate-300"
           }`}
         >
-          Backend Source Code
+          View source
         </button>
       </div>
       <div className="flex-1 min-h-0" role="tabpanel">
@@ -133,9 +133,8 @@ export function DemoPanelTabs({
         ) : (
           <div className="h-full overflow-y-auto px-4 sm:px-5 py-4 space-y-3">
             <p className="text-[13px] leading-relaxed text-slate-400">
-              Switch files to inspect the backend that powers the Live Visual
-              Console - Python tools, SQL isolation, and the TypeScript stream
-              handlers.
+              Backend excerpts that drive this demo - tools, isolation, and
+              stream handlers.
             </p>
             <CodeViewer files={sourceFiles} />
           </div>

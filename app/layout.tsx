@@ -25,9 +25,9 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ashton Medina - AI Solutions Architect",
+  title: "Ashton Medina - Systems Architect & Operations Consultant",
   description:
-    "Ashton Medina builds automated workflows, secure database pipelines, and smart operational systems - combining 10 years of multi-site operations leadership with modern systems architecture.",
+    "Ashton Medina builds custom software tools, database pipelines, and automated workflows for multi-site operations - with 10 years of hands-on operational experience.",
 };
 
 export default function RootLayout({

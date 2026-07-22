@@ -111,7 +111,7 @@ export function MigrateOpsConsole({
       sourceFiles={MIGRATE_SOURCE_FILES}
       live={
         <OpsConsoleShell
-          title="Live Visual Console"
+          title="Operations console"
           statusLabel={statusLabel}
           statusTone={statusTone}
           isRunning={idle || isRunning}

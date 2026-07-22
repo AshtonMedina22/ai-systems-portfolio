@@ -104,7 +104,7 @@ export function PayFlowOpsConsole({
       sourceFiles={PAYFLOW_SOURCE_FILES}
       live={
         <OpsConsoleShell
-          title="Live Visual Console"
+          title="Operations console"
           statusLabel={statusLabel}
           statusTone={statusTone}
           isRunning={idle || isRunning}
