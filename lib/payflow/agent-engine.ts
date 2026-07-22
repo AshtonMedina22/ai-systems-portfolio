@@ -4,15 +4,35 @@ import { InvoicePayload } from "./types";
 import { LogEntry } from "@/components/ui/TerminalStream";
 import { DEFAULT_MCP_URL, isMcpServerReachable } from "./mcp-client";
 import {
+  DEMO_MCP_TOOLS,
   toolCheckBankRouting,
   toolPostErpLedger,
   toolVerifyVendorEntity,
 } from "./mcp-tools";
 
+export type PayflowMcpMode = "auto" | "embedded" | "http";
+
 export interface AgentExecutionOptions {
   mcpUrl?: string;
-  /** Use local TS tools if the MCP server is unreachable. */
+  /**
+   * auto (default): prefer live FastMCP if reachable, else embedded demo tools.
+   * embedded: always use in-project tools (best for hosted demos / Vercel).
+   * http: require live FastMCP HTTP server (fails if unreachable).
+   */
+  mode?: PayflowMcpMode;
+  /** @deprecated Use mode. Kept for older callers. */
   allowLocalFallback?: boolean;
+}
+
+function resolveMode(options: AgentExecutionOptions): PayflowMcpMode {
+  if (options.mode) return options.mode;
+  const fromEnv = (process.env.PAYFLOW_MCP_MODE ?? "").toLowerCase();
+  if (fromEnv === "embedded" || fromEnv === "http" || fromEnv === "auto") {
+    return fromEnv;
+  }
+  if (process.env.PAYFLOW_REQUIRE_LIVE_MCP === "1") return "http";
+  // Demo default: try live FastMCP when present, otherwise in-project tools
+  return "auto";
 }
 
 function createLogEntry(
@@ -114,6 +134,56 @@ function createMcpToolRunner(client: Client): ToolRunner {
   };
 }
 
+async function* runEmbeddedDemoRuntime(
+  invoice: InvoicePayload,
+  source: string
+): AsyncGenerator<LogEntry, void, unknown> {
+  yield createLogEntry(
+    "info",
+    "mcp:session",
+    "Using in-project MCP tool runtime (demo-hosted). Same tool schemas as the FastMCP server.",
+    {
+      runtime: "embedded",
+      note: "Optional live FastMCP: npm run dev:mcp + PAYFLOW_MCP_MODE=http",
+    }
+  );
+
+  await sleep(250);
+
+  yield createLogEntry(
+    "tool_call",
+    "mcp:embedded_demo",
+    "MCP: Discovering available tools via JSON-RPC (tools/list)...",
+    {
+      method: "tools/list",
+      tools: DEMO_MCP_TOOLS.map((t) => t.name),
+      jsonrpc: "2.0",
+      transport: "in-process",
+    }
+  );
+
+  yield createLogEntry(
+    "tool_result",
+    "mcp:embedded_demo",
+    `Discovered ${DEMO_MCP_TOOLS.length} tools: ${DEMO_MCP_TOOLS.map((t) => t.name).join(", ")}`,
+    {
+      tools: DEMO_MCP_TOOLS.map((t) => ({
+        name: t.name,
+        description: t.description,
+      })),
+    }
+  );
+
+  await sleep(300);
+
+  yield* runWorkflow(
+    invoice,
+    createLocalToolRunner(),
+    "mcp:embedded_demo",
+    source
+  );
+}
+
 async function* runWorkflow(
   invoice: InvoicePayload,
   callTool: ToolRunner,
@@ -128,11 +198,12 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_call",
     transportLabel,
-    "Executing MCP tools/call: verify_vendor_entity()",
+    `TOOL CALL: executing verify_vendor_entity(name="${invoice.vendorName}")`,
     {
       method: "tools/call",
       tool: "verify_vendor_entity",
       arguments: verifyArgs,
+      jsonrpc: "2.0",
     }
   );
 
@@ -147,24 +218,28 @@ async function* runWorkflow(
     yield createLogEntry(
       "error",
       "mcp:registry_check",
-      `Alert: vendor '${invoice.vendorName}' is not registered in the enterprise vendor registry.`,
+      `SECURITY FLAG: vendor '${invoice.vendorName}' is not registered in the enterprise vendor registry.`,
       vendorResultContent
     );
     yield createLogEntry(
       "warning",
       source,
-      "Workflow halted: payment blocked due to unknown vendor."
+      "ESCALATION: Halting payment pipeline. Unknown vendor blocked before payout."
     );
     return;
   }
 
-  const confidencePct =
-    Number(vendorResultContent.confidenceScore ?? 0) * 100;
+  const confidencePct = Number(vendorResultContent.confidenceScore ?? 0) * 100;
+  const nameSimilarity = Number(vendorResultContent.nameSimilarity ?? 0) * 100;
+  const matchMethod =
+    typeof vendorResultContent.matchMethod === "string"
+      ? vendorResultContent.matchMethod
+      : "REGISTRY";
 
   yield createLogEntry(
     "tool_result",
-    "mcp:registry_check",
-    `Enterprise registry match confirmed: Vendor ID ${vendorResultContent.vendorId} (${confidencePct}% confidence)`,
+    "mcp:fuzzy_match",
+    `FUZZY MATCH: Name similarity ${nameSimilarity.toFixed(1)}% via ${matchMethod} - Vendor ID ${vendorResultContent.vendorId} (${confidencePct.toFixed(1)}% confidence)`,
     vendorResultContent
   );
 
@@ -179,11 +254,12 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_call",
     transportLabel,
-    "Executing MCP tools/call: check_bank_routing()",
+    `TOOL CALL: executing check_bank_routing(vendorId="${bankArgs.vendorId}")`,
     {
       method: "tools/call",
       tool: "check_bank_routing",
       arguments: bankArgs,
+      jsonrpc: "2.0",
     }
   );
 
@@ -195,7 +271,7 @@ async function* runWorkflow(
     yield createLogEntry(
       "warning",
       "mcp:anti_fraud_rules",
-      `Fraud alert: ${bankResultContent.message}`,
+      "SECURITY FLAG: Routing number mismatch detected against the approved enterprise payment profile.",
       bankResultContent
     );
 
@@ -204,7 +280,7 @@ async function* runWorkflow(
     yield createLogEntry(
       "error",
       source,
-      `Escalated: payout of $${invoice.invoiceAmount.toLocaleString()} blocked. Flagged for manual review.`,
+      `ESCALATION: Halting payment pipeline. Payout of $${invoice.invoiceAmount.toLocaleString()} blocked and flagged for manager review.`,
       {
         action: "ESCALATE_TO_COMPLIANCE",
         flaggedReason: "UNAUTHORIZED_BANK_ROUTING_CHANGE",
@@ -233,11 +309,12 @@ async function* runWorkflow(
   yield createLogEntry(
     "tool_call",
     transportLabel,
-    "Executing MCP tools/call: post_erp_ledger()",
+    `TOOL CALL: executing post_erp_ledger(invoiceId="${ledgerArgs.invoiceId}")`,
     {
       method: "tools/call",
       tool: "post_erp_ledger",
       arguments: ledgerArgs,
+      jsonrpc: "2.0",
     }
   );
 
@@ -269,17 +346,18 @@ async function* runWorkflow(
 
 /**
  * PayFlow workflow: list tools, then verify vendor -> bank check -> ledger post.
- * Prefers the live FastMCP HTTP server; optional local fallback is labeled in the stream.
+ *
+ * Modes (PAYFLOW_MCP_MODE):
+ * - auto (default): live FastMCP if reachable, else in-project embedded tools
+ * - embedded: always in-project tools (best for Vercel / public demos)
+ * - http: require live FastMCP at MCP_SERVER_URL
  */
 export async function* runPayFlowAgentEngine(
   invoice: InvoicePayload,
   options: AgentExecutionOptions = {}
 ): AsyncGenerator<LogEntry, void, unknown> {
   const mcpUrl = options.mcpUrl ?? DEFAULT_MCP_URL;
-  const allowLocalFallback =
-    options.allowLocalFallback ??
-    process.env.PAYFLOW_ALLOW_LOCAL_FALLBACK === "1";
-
+  const mode = resolveMode(options);
   const source = "agent:payflow";
 
   yield createLogEntry(
@@ -291,37 +369,31 @@ export async function* runPayFlowAgentEngine(
       vendorTaxId: invoice.vendorTaxId,
       submittedBank: invoice.bankDetails.bankName,
       scenario: invoice.metadata?.isTestScenario ?? "custom",
+      mcpMode: mode,
     }
   );
 
   await sleep(400);
 
+  if (mode === "embedded") {
+    yield* runEmbeddedDemoRuntime(invoice, source);
+    return;
+  }
+
   const reachable = await isMcpServerReachable(mcpUrl);
 
   if (!reachable) {
-    if (!allowLocalFallback) {
+    if (mode === "http") {
       yield createLogEntry(
         "error",
         "mcp:session",
         `FastMCP server unreachable at ${mcpUrl}. Start it with: npm run dev:mcp`,
-        { mcpUrl, allowLocalFallback: false }
+        { mcpUrl, mode }
       );
       return;
     }
 
-    yield createLogEntry(
-      "warning",
-      "mcp:session",
-      `FastMCP server unreachable at ${mcpUrl}. Using LOCAL FALLBACK tool implementations (not live MCP).`,
-      { hint: "Run: npm run dev:mcp", allowLocalFallback: true }
-    );
-
-    yield* runWorkflow(
-      invoice,
-      createLocalToolRunner(),
-      "local:fallback_tools",
-      source
-    );
+    yield* runEmbeddedDemoRuntime(invoice, source);
     return;
   }
 
@@ -338,7 +410,7 @@ export async function* runPayFlowAgentEngine(
       "info",
       "mcp:session",
       `Connected to FastMCP server at ${mcpUrl}`,
-      { transport: "streamable-http" }
+      { transport: "streamable-http", mode }
     );
 
     await sleep(250);
@@ -348,17 +420,18 @@ export async function* runPayFlowAgentEngine(
     yield createLogEntry(
       "tool_call",
       "mcp:fastmcp_server",
-      "MCP tools/list: discovering available tools",
+      "MCP: Discovering available tools via JSON-RPC (tools/list)...",
       {
         method: "tools/list",
         tools: listed.tools.map((t) => t.name),
+        jsonrpc: "2.0",
       }
     );
 
     yield createLogEntry(
       "tool_result",
       "mcp:fastmcp_server",
-      `Discovered ${listed.tools.length} tools from payflow-ap-agent`,
+      `Discovered ${listed.tools.length} tools: ${listed.tools.map((t) => t.name).join(", ")}`,
       {
         tools: listed.tools.map((t) => ({
           name: t.name,
@@ -376,13 +449,27 @@ export async function* runPayFlowAgentEngine(
       source
     );
   } catch (err) {
+    if (mode === "auto") {
+      yield createLogEntry(
+        "warning",
+        "mcp:session",
+        "Live FastMCP session failed. Switching to in-project MCP tool runtime.",
+        {
+          mcpUrl,
+          error: err instanceof Error ? err.message : "unknown",
+        }
+      );
+      yield* runEmbeddedDemoRuntime(invoice, source);
+      return;
+    }
+
     yield createLogEntry(
       "error",
       "mcp:session",
       err instanceof Error
         ? `MCP session failed: ${err.message}`
         : "MCP session failed with an unknown error.",
-      { mcpUrl }
+      { mcpUrl, mode }
     );
   } finally {
     try {

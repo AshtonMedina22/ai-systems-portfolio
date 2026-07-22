@@ -14,7 +14,11 @@ Integrations are framed as **universal enterprise architecture** - SAP, NetSuite
 
 ## Project 1 - PayFlow (MCP)
 
-PayFlow is an accounts-payable and anti-fraud agent. It verifies vendor identity, checks bank routing against approved profiles, and posts to the enterprise AP ledger only when both checks pass. Clean invoices can auto-pay; fraud or unknown-vendor cases escalate or halt before money moves.
+**Positioning:** Enterprise Accounts Payable Automation & Anti-Fraud Suite.
+
+**Business problem:** AP teams spend hours manually keying invoices, verifying vendor records, and checking bank routing - a slow process that leaves companies open to invoice spoofing and fraudulent bank account changes.
+
+**Business outcome:** An automated AP agent that cuts manual entry, validates vendors against core ledger systems in real time, and flags fraudulent routing changes or unknown vendors before money leaves company accounts.
 
 ### Design choice: deterministic orchestration (not an autonomous LLM)
 
@@ -22,11 +26,13 @@ Corporate finance cannot treat payout authorization as an open-ended LLM loop. H
 
 PayFlow uses a **deterministic MCP orchestrator**:
 
-1. Verify vendor identity against the enterprise vendor registry  
+1. Verify vendor identity against the enterprise vendor registry (exact tax ID + fuzzy name matching)  
 2. Check bank routing against the approved payment profile  
 3. Post to the enterprise AP ledger only if both checks pass; otherwise block and escalate  
 
-**MCP** exposes explicit tools (`verify_vendor_entity`, `check_bank_routing`, `post_erp_ledger`) over Streamable HTTP. Language heuristics (for example fuzzy vendor matching) stay inside those tools. Authorization and payout routing stay rule-based and fully auditable.
+**Stack:** Python FastMCP server, JSON-RPC / MCP tools, TypeScript Next.js frontend, Server-Sent Events (SSE). Ledger tooling mirrors enterprise AP vendor-master patterns (SAP / NetSuite-style); the demo registry is in-process for glass-box replay.
+
+**MCP** exposes explicit tools (`verify_vendor_entity`, `check_bank_routing`, `post_erp_ledger`) over Streamable HTTP. Fuzzy entity matching and deterministic anti-fraud rules stay inside those tools. Authorization and payout routing stay rule-based and fully auditable.
 
 | Audience | How to read this |
 |----------|------------------|
@@ -37,8 +43,8 @@ The Next.js app calls the FastMCP Python server via the MCP TypeScript SDK and s
 
 | Scenario | Outcome |
 |----------|---------|
-| Clean invoice | Vendor match, bank OK, ledger post |
-| Spoofed bank | Fraud escalate (no ledger) |
+| Standard clean invoice (Acme Corp) | Vendor match, bank OK, ledger post |
+| Spoofed fraud invoice (name typo + bad routing) | Fuzzy match may pass; routing mismatch escalates (no ledger) |
 | Unknown vendor | Registry reject, halt |
 
 ### Run locally
@@ -61,8 +67,10 @@ npm run test:mcp
 
 ### Notes
 
-- Live path: `/api/payflow` -> MCP client -> `http://127.0.0.1:8000/mcp`
-- Optional fallback: `PAYFLOW_ALLOW_LOCAL_FALLBACK=1` uses local TypeScript tool mirrors when the MCP server is down (labeled `local:fallback_tools` in the stream)
+- **Hosted demos (Vercel):** set `PAYFLOW_MCP_MODE=embedded` (or leave `auto`). The Next.js API runs the same MCP tool schemas in-process - no separate Python server required.
+- **Local credibility path:** `npm run dev:mcp` + `PAYFLOW_MCP_MODE=auto|http` connects to live FastMCP at `http://127.0.0.1:8000/mcp`.
+- Live path: `/api/payflow` -> MCP client -> FastMCP **or** in-project tool runtime
+- Tool surface (both paths): `verify_vendor_entity`, `check_bank_routing`, `post_erp_ledger`
 
 ## Stack
 

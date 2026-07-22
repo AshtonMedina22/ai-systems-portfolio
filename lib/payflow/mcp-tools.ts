@@ -1,7 +1,26 @@
-// Local fallback tools mirroring mcp-server/erp_registry.py
-// Used when PAYFLOW_ALLOW_LOCAL_FALLBACK=1 and the FastMCP server is down.
+// In-project MCP tool runtime - mirrors mcp-server/erp_registry.py.
+// Used for hosted demos (Vercel) and when the live FastMCP HTTP server is down.
 
 import { MCPToolResponse } from "./types";
+
+/** Same tool surface as the Python FastMCP server (for tools/list in embedded mode). */
+export const DEMO_MCP_TOOLS = [
+  {
+    name: "verify_vendor_entity",
+    description:
+      "Resolve vendor identity against the enterprise vendor registry (exact tax ID + fuzzy name).",
+  },
+  {
+    name: "check_bank_routing",
+    description:
+      "Compare submitted bank details to the authorized enterprise payment profile.",
+  },
+  {
+    name: "post_erp_ledger",
+    description:
+      "Post an approved invoice to the enterprise accounts-payable ledger.",
+  },
+] as const;
 
 const ERP_VENDOR_REGISTRY = [
   {

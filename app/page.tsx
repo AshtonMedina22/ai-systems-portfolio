@@ -16,9 +16,9 @@ const PROJECTS = [
     title: "Accounts Payable & Anti-Fraud Suite",
     headline: "Automated Invoice Processing & Financial Fraud Shield",
     value:
-      "Eliminates manual invoice data entry while automatically verifying vendor credentials and flagging unauthorized bank routing changes before money leaves company accounts.",
+      "Eliminates manual invoice data entry while verifying vendor credentials against core ledger systems and flagging unauthorized bank routing changes before money leaves company accounts.",
     connectors:
-      "Model Context Protocol (FastMCP) | SAP & NetSuite Ledger Integration | Deterministic Anti-Fraud Rules",
+      "Model Context Protocol (FastMCP) | SAP & NetSuite Ledger Integration | Fuzzy Entity Matching | Deterministic Anti-Fraud Rules",
     live: true,
   },
   {

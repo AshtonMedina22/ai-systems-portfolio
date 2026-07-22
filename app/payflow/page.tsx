@@ -31,16 +31,17 @@ const PRESETS: Array<{
 }> = [
   {
     key: "clean",
-    label: "Standard Acme Corp invoice",
-    detail: "Clean path - shows automated processing and auto-pay",
+    label: "Standard clean invoice (Acme Corp)",
+    detail: "Clean path - vendor match, bank OK, auto-post to AP ledger",
     icon: <CheckCircle2 className="h-4 w-4 text-emerald-700" />,
     activeClass:
       "border-violet-400 bg-violet-50 text-opal-main shadow-sm ring-1 ring-violet-200",
   },
   {
     key: "spoofed_bank",
-    label: "Unrecognized routing number",
-    detail: "Fraud path - shows the anti-fraud shield before payout",
+    label: "Spoofed fraud invoice (Acme Enterprize)",
+    detail:
+      "Fraud path - subtle vendor-name typo plus unauthorized bank routing change",
     icon: <ShieldAlert className="h-4 w-4 text-rose-700" />,
     activeClass:
       "border-rose-300 bg-rose-50 text-opal-main shadow-sm ring-1 ring-rose-200",
@@ -48,7 +49,8 @@ const PRESETS: Array<{
   {
     key: "unknown_vendor",
     label: "Unregistered vendor invoice",
-    detail: "Identity path - blocks payment when the enterprise registry has no match",
+    detail:
+      "Identity path - blocks payment when the enterprise registry has no match",
     icon: <UserX className="h-4 w-4 text-amber-700" />,
     activeClass:
       "border-amber-300 bg-amber-50 text-opal-main shadow-sm ring-1 ring-amber-200",
@@ -82,18 +84,18 @@ function HowThisWorks() {
       {open ? (
         <div className="border-t border-slate-300 px-4 py-3.5 text-sm leading-relaxed text-opal-muted space-y-3">
           <p>
-            PayFlow is built with financial safeguards, not an unsupervised AI
-            that decides payouts on its own. Model Context Protocol (MCP) is a
-            secure bridge to enterprise ERP and core banking ledgers - systems
-            like SAP, NetSuite, and Salesforce finance modules. The AI does not
-            get open access to company funds.
+            Accounts payable teams burn hours keying invoices, verifying vendor
+            records, and checking bank routing details by hand. That slow process
+            leaves companies open to invoice spoofing and fraudulent bank account
+            changes before payouts go out.
           </p>
           <p>
-            A fixed checklist runs every time: verify the vendor, check bank
-            routing, then post to the AP ledger only if both checks pass.
-            Anything unusual is blocked and escalated for human review. That
-            predictability is what finance and compliance teams need for audit
-            trails.
+            PayFlow is an automated AP agent with financial safeguards - not an
+            unsupervised AI that decides payouts alone. Model Context Protocol
+            (MCP) exposes secure tools over JSON-RPC to enterprise ledgers (SAP,
+            NetSuite, Salesforce finance). Every run verifies the vendor, checks
+            bank routing, then posts to the AP ledger only if both checks pass.
+            Anything unusual is halted and escalated for manager review.
           </p>
         </div>
       ) : null}
@@ -208,19 +210,21 @@ export default function PayFlowPage() {
   return (
     <div className="min-h-screen">
       <GlassBox
-        title="PayFlow"
-        badge="Project 1 - MCP - Accounts Payable & Anti-Fraud"
-        description="Plugs into SAP, NetSuite, and core banking ledgers via MCP. Governed steps verify vendor identity, bank routing, and fraud flags - then post to the enterprise AP ledger only when checks pass."
+        title="PayFlow AP & Fraud Prevention"
+        badge="Project 1 - Enterprise Accounts Payable Automation & Anti-Fraud Suite"
+        description="Eliminates manual invoice entry, validates vendors against core ledger systems in real time, and flags fraudulent routing changes before money leaves company accounts."
         headerExtra={<HowThisWorks />}
         isRunning={isRunning}
-        controlLabel="Business overview"
-        controlHint="Scenario input"
+        controlLabel="User action"
+        controlHint="Select invoice payload"
         controlPanel={
           <div className="space-y-6">
             <ExecutiveKpiStrip logs={logs} isRunning={isRunning} />
 
             <div>
-              <label className="label-opal mb-2.5 block">Select scenario</label>
+              <label className="label-opal mb-2.5 block">
+                Select invoice payload
+              </label>
               <div className="grid grid-cols-1 gap-2.5">
                 {PRESETS.map((preset) => {
                   const active = selectedPreset === preset.key;
@@ -264,7 +268,15 @@ export default function PayFlowPage() {
               <dl className="space-y-2 text-[13px]">
                 <div className="flex justify-between gap-4">
                   <dt className="font-medium text-opal-label">Vendor</dt>
-                  <dd className="text-right font-medium text-opal-main">
+                  <dd
+                    className={`text-right font-medium ${
+                      selectedPreset === "spoofed_bank"
+                        ? "text-rose-700"
+                        : selectedPreset === "unknown_vendor"
+                          ? "text-amber-700"
+                          : "text-opal-main"
+                    }`}
+                  >
                     {activeInvoice.vendorName}
                   </dd>
                 </div>
@@ -336,7 +348,9 @@ export default function PayFlowPage() {
               className="group w-full inline-flex items-center justify-center gap-2 rounded-xl bg-opal-purple px-4 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-opal-violet disabled:opacity-50"
             >
               <span>
-                {isRunning ? "Running checks..." : "Run PayFlow agent"}
+                {isRunning
+                  ? "Running AP verification..."
+                  : "Run Automated AP Verification"}
               </span>
               {!isRunning ? (
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -348,8 +362,21 @@ export default function PayFlowPage() {
           <TerminalStream
             logs={logs}
             isRunning={isRunning}
-            title="Technical execution"
+            title="Live glass-box MCP terminal"
             onClear={() => setLogs([])}
+            emptyMessage={
+              <p>
+                Run Automated AP Verification to stream MCP{" "}
+                <span className="font-mono text-[13px] font-medium text-violet-300">
+                  tools/list
+                </span>
+                ,{" "}
+                <span className="font-mono text-[13px] font-medium text-violet-300">
+                  tools/call
+                </span>
+                , fuzzy match scores, and fraud escalations here.
+              </p>
+            }
           />
         }
       />

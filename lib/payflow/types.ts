@@ -72,7 +72,7 @@ export const SAMPLE_INVOICES: Record<string, InvoicePayload> = {
   },
   spoofed_bank: {
     invoiceId: "INV-2026-9904",
-    vendorName: "Acme Global Enterprise Inc.",
+    vendorName: "Acme Global Enterprize Inc.",
     vendorTaxId: "XX-XXX4910",
     invoiceAmount: 68250.0,
     bankDetails: {
