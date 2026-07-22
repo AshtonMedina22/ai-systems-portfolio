@@ -21,7 +21,7 @@ const SCENARIOS = [
   {
     key: "record",
     label: "Confidential record leak test",
-    detail: "Blocks confidential fields from leaving the trust boundary",
+    detail: "Redacts confidential fields before they leave the trust boundary",
     icon: <FileLock2 className="h-4 w-4 text-emerald-700" />,
   },
 ] as const;
@@ -35,7 +35,7 @@ export default function GuardrailsPage() {
     <GlassBox
       title="Enterprise Guardrails"
       badge="Project 3 - Evals - Data Privacy & Safety Suite"
-      description="Automated PII redaction and AI quality inspection. Sensitive fields are stripped before inputs reach LLMs - protecting customers and guaranteeing regulatory compliance."
+      description="Automated PII redaction and AI quality inspection. Sensitive fields can be stripped before inputs reach LLMs to help reduce data-exposure risk."
       controlLabel="Business overview"
       controlHint="Scenario input"
       controlPanel={
@@ -43,8 +43,8 @@ export default function GuardrailsPage() {
           <div className="rounded-xl border border-slate-200/80 bg-violet-50/60 px-4 py-3.5 space-y-2">
             <p className="label-opal">Business impact</p>
             <p className="text-sm leading-relaxed text-opal-muted">
-              Eliminates compliance and data-leak risk so SSNs, cards, and
-              confidential records never leave the enterprise trust boundary.
+              Helps lower compliance and data-leak risk by redacting SSNs,
+              cards, and other sensitive fields before model calls.
             </p>
           </div>
 

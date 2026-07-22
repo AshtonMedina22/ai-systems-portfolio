@@ -8,9 +8,9 @@ Integrations are framed as **universal enterprise architecture** - SAP, NetSuite
 
 | System | Focus | Enterprise integration | Business impact |
 |--------|-------|------------------------|-----------------|
-| **PayFlow (MCP)** `/payflow` | Accounts payable & anti-fraud | SAP, NetSuite, core banking ledgers via MCP | Automates invoice checks; blocks fraudulent routing changes |
-| **Self-Healing SRE (LangGraph)** `/sre` | Automated incident manager | Enterprise cloud (AWS / Kubernetes) | Cuts outage downtime with mandatory manager sign-off |
-| **Enterprise Guardrails (Evals)** `/guardrails` | Data privacy & safety suite | PII redaction before LLM payloads | Eliminates compliance and leak risk |
+| **PayFlow (MCP)** `/payflow` | Accounts payable & anti-fraud | SAP, NetSuite, core banking ledgers via MCP | Helps automate invoice checks and flag suspicious routing changes |
+| **Self-Healing SRE (LangGraph)** `/sre` | Automated incident manager | Enterprise cloud (AWS / Kubernetes) | Helps shorten outage response with manager sign-off |
+| **Enterprise Guardrails (Evals)** `/guardrails` | Data privacy & safety suite | PII redaction before LLM payloads | Helps reduce compliance and leak exposure |
 
 ## Project 1 - PayFlow (MCP)
 
@@ -18,7 +18,7 @@ Integrations are framed as **universal enterprise architecture** - SAP, NetSuite
 
 **Business problem:** AP teams spend hours manually keying invoices, verifying vendor records, and checking bank routing - a slow process that leaves companies open to invoice spoofing and fraudulent bank account changes.
 
-**Business outcome:** An automated AP agent that cuts manual entry, validates vendors against core ledger systems in real time, and flags fraudulent routing changes or unknown vendors before money leaves company accounts.
+**Business outcome:** An automated AP agent that helps cut manual entry, validates vendors against core ledger systems in real time, and flags suspicious routing changes or unknown vendors before payouts are released.
 
 ### Design choice: deterministic orchestration (not an autonomous LLM)
 
@@ -36,7 +36,7 @@ PayFlow uses a **deterministic MCP orchestrator**:
 
 | Audience | How to read this |
 |----------|------------------|
-| Business / finance leaders | Built-in safeguards: the system cannot release funds without verified checks |
+| Business / finance leaders | Built-in safeguards: this demo agent only releases funds after verified checks |
 | Engineering leaders | Deterministic orchestrator over MCP - testable, predictable, production-shaped |
 
 The Next.js app calls the FastMCP Python server via the MCP TypeScript SDK and streams results to the UI with SSE.

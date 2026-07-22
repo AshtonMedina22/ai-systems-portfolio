@@ -35,7 +35,7 @@ export default function SrePage() {
     <GlassBox
       title="Self-Healing SRE"
       badge="Project 2 - LangGraph - Autonomous Incident Manager"
-      description="24/7 system downtime prevention and incident recovery. Collaborative agents diagnose crashes and draft repair plans - with mandatory human-manager approval before anything reaches production."
+      description="Incident triage and recovery with human approval gates. Collaborative agents diagnose crashes and draft repair plans - managers still approve before production changes land."
       controlLabel="Business overview"
       controlHint="Scenario input"
       controlPanel={
@@ -43,8 +43,8 @@ export default function SrePage() {
           <div className="rounded-xl border border-slate-200/80 bg-violet-50/60 px-4 py-3.5 space-y-2">
             <p className="label-opal">Business impact</p>
             <p className="text-sm leading-relaxed text-opal-muted">
-              Cuts outage downtime from hours to seconds with automated triage
-              and mandatory manager sign-off.
+              Helps shorten outage response with automated triage and manager
+              sign-off before remediation changes are applied.
             </p>
           </div>
 

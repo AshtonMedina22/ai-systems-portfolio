@@ -93,7 +93,7 @@ function HowThisWorks() {
             PayFlow is an automated AP agent with financial safeguards - not an
             unsupervised AI that decides payouts alone. Model Context Protocol
             (MCP) exposes secure tools over JSON-RPC to enterprise ledgers (SAP,
-            NetSuite, Salesforce finance). Every run verifies the vendor, checks
+            NetSuite, Salesforce finance). Each run verifies the vendor, checks
             bank routing, then posts to the AP ledger only if both checks pass.
             Anything unusual is halted and escalated for manager review.
           </p>
@@ -212,7 +212,7 @@ export default function PayFlowPage() {
       <GlassBox
         title="PayFlow AP & Fraud Prevention"
         badge="Project 1 - Enterprise Accounts Payable Automation & Anti-Fraud Suite"
-        description="Eliminates manual invoice entry, validates vendors against core ledger systems in real time, and flags fraudulent routing changes before money leaves company accounts."
+        description="Helps reduce manual invoice entry by validating vendors against core ledger systems in real time and flagging suspicious routing changes before payouts are released."
         headerExtra={<HowThisWorks />}
         isRunning={isRunning}
         controlLabel="User action"

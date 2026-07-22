@@ -14,9 +14,9 @@ const PROJECTS = [
     href: "/payflow",
     eyebrow: "Project 1 - PayFlow",
     title: "Accounts Payable & Anti-Fraud Suite",
-    headline: "Automated Invoice Processing & Financial Fraud Shield",
+    headline: "Automated Invoice Processing & Financial Fraud Checks",
     value:
-      "Eliminates manual invoice data entry while verifying vendor credentials against core ledger systems and flagging unauthorized bank routing changes before money leaves company accounts.",
+      "Helps cut manual invoice entry by verifying vendor credentials against core ledger systems and flagging unauthorized bank routing changes before payouts are released.",
     connectors:
       "Model Context Protocol (FastMCP) | SAP & NetSuite Ledger Integration | Fuzzy Entity Matching | Deterministic Anti-Fraud Rules",
     live: true,
@@ -25,9 +25,9 @@ const PROJECTS = [
     href: "/sre",
     eyebrow: "Project 2 - Self-Healing SRE",
     title: "Autonomous Incident Manager",
-    headline: "24/7 System Downtime Prevention & Incident Recovery",
+    headline: "Incident Triage & Recovery with Human Approval",
     value:
-      "Reduces software outage downtime from hours to seconds by using collaborative AI agents to diagnose crashes and draft repair plans with mandatory human-manager approval gates.",
+      "Helps shorten outage response by using collaborative AI agents to diagnose failures and draft repair plans that still require manager approval before production changes.",
     connectors:
       "LangGraph Multi-Agent Debate | Human-in-the-Loop Sign-Off | AWS & Enterprise Cloud Health",
     live: false,
@@ -38,9 +38,9 @@ const PROJECTS = [
     title: "Data Privacy & Safety Suite",
     headline: "Automated PII Redaction & AI Quality Inspection",
     value:
-      "Protects sensitive customer data by automatically stripping Social Security numbers, credit cards, and confidential records before sending inputs to AI models, guaranteeing 100% regulatory compliance.",
+      "Helps reduce data-exposure risk by stripping Social Security numbers, payment card data, and other sensitive fields before inputs are sent to AI models.",
     connectors:
-      "Promptfoo Evals | Real-Time PII Sanitizer | HIPAA & GDPR Compliance",
+      "Promptfoo Evals | Real-Time PII Sanitizer | HIPAA & GDPR-oriented Controls",
     live: false,
   },
 ] as const;
@@ -48,18 +48,18 @@ const PROJECTS = [
 const VALUE_POINTS = [
   {
     icon: Lock,
-    title: "100% Data Privacy",
-    body: "Automated PII redaction ensures sensitive customer records never leak to AI models.",
+    title: "Data Privacy Controls",
+    body: "Automated PII redaction reduces the chance that sensitive customer fields are sent to external AI models.",
   },
   {
     icon: Zap,
     title: "Standardized MCP Tools",
-    body: "Secure tool connections linking LLMs directly to core business ledger databases.",
+    body: "Secure tool connections that link LLMs to core business ledger databases through explicit, auditable interfaces.",
   },
   {
     icon: Shield,
     title: "Human-in-the-Loop",
-    body: "Mandatory manager authorization before executing financial or infrastructure changes.",
+    body: "High-risk financial or infrastructure actions can require manager authorization before they execute.",
   },
 ] as const;
 
@@ -72,12 +72,12 @@ const PHILOSOPHY = [
   {
     step: "02",
     title: "Deterministic safeguards",
-    body: "Enforce strict business rules so AI never makes unvetted financial or infrastructure moves.",
+    body: "Enforce strict business rules so high-risk AI actions stay gated behind verified checks and approvals.",
   },
   {
     step: "03",
     title: "Glass-box auditability",
-    body: "Stream real-time tool logs and decision metrics so leaders can inspect every step.",
+    body: "Stream real-time tool logs and decision metrics so leaders can inspect each step.",
   },
 ] as const;
 
