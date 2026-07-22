@@ -1,6 +1,6 @@
 export const site = {
   name: "Ashton Medina",
-  role: "AI Solutions Architect",
+  role: "Systems Architect & Operations Consultant",
   github: "https://github.com/AshtonMedina22",
   githubRepo: "https://github.com/AshtonMedina22/ai-systems-portfolio",
   linkedin: "https://www.linkedin.com/in/ashton-medina/",
@@ -8,5 +8,5 @@ export const site = {
 } as const;
 
 export const contactMailto = `mailto:${site.email}?subject=${encodeURIComponent(
-  "Portfolio inquiry - AI systems"
+  "Portfolio inquiry"
 )}`;

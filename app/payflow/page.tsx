@@ -134,9 +134,9 @@ export default function PayFlowPage() {
       <GlassBox
         title="PayFlow"
         badge="Project 1"
-        purpose="Automated invoice verification that flags spoofed vendor bank details before payout."
-        problem="Manual invoice checks burn hours, and a slightly altered routing number can wire money to the wrong place before anyone notices."
-        built="An AP verification agent that fuzzy-matches vendors, cross-checks bank routing against approved profiles, and posts clean invoices to the ledger - or holds them."
+        purpose="Invoice verification that flags mismatched vendor bank details before payout."
+        problem="Manual invoice checks take hours, and a slightly altered routing number can send money to the wrong account before anyone catches it."
+        built="An invoice verification tool that matches vendors to the company registry, checks bank routing against approved profiles, and posts clean invoices to the ledger - or holds them."
         stack="Python · FastMCP · PostgreSQL · SSE"
         isRunning={isRunning}
         controlLabel="Scenario"

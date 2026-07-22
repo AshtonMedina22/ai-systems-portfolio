@@ -9,10 +9,9 @@ export function Footer() {
             Let&apos;s Talk
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-slate-300 sm:text-base">
-            If you&apos;re looking for someone who understands both the
-            operational side of a business and how to build the software systems
-            that run it, let&apos;s connect. I&apos;m always open to discussing
-            new opportunities or consulting projects.
+            If you need someone who understands operations and can build the
+            systems that run them, email me. Open to full-time roles and
+            consulting work.
           </p>
 
           <div className="mt-8">

@@ -147,9 +147,9 @@ export default function MigratePage() {
       <GlassBox
         title="Client Migration Pipeline"
         badge="Project 2"
-        purpose="ETL onboarding that cleans messy client spreadsheets into isolated tenant schemas."
-        problem="Onboarding clients with poorly formatted spreadsheets breaks schemas, delays go-live, and leaves ops teams cleaning data by hand."
-        built="A migration pipeline that validates types, remediates formatting issues, provisions a tenant partition, and reports cutover success or hold."
+        purpose="Onboarding pipeline that cleans messy client spreadsheets into isolated client schemas."
+        problem="Messy client spreadsheets break database schemas, delay go-live, and leave ops teams cleaning data by hand."
+        built="A migration pipeline that validates types, fixes formatting issues, loads records into an isolated client schema, and reports success or hold."
         stack="Python · Pandas · PostgreSQL · SSE"
         isRunning={isRunning}
         controlLabel="Scenario"

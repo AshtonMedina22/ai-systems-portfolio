@@ -219,9 +219,9 @@ export default function WorkflowPage() {
       <GlassBox
         title="Workflow & Approvals"
         badge="Project 3"
-        purpose="Sequential process runner with a hard manager gate above financial thresholds."
-        problem="Multi-site workflows stall in email chains, and high-value steps can run without an explicit manager sign-off."
-        built={`A state-machine runner that automates routine steps, then pauses when a request crosses $${FINANCIAL_THRESHOLD_USD.toLocaleString()} until a manager approves or rejects.`}
+        purpose="Process runner with a manager checkpoint above financial thresholds."
+        problem="Multi-site requests stall in email chains, and high-value steps can move forward without a clear manager sign-off."
+        built={`A step-by-step runner that handles routine work, then pauses when a request crosses $${FINANCIAL_THRESHOLD_USD.toLocaleString()} until a manager approves or rejects.`}
         stack="TypeScript · Next.js · Checkpoints · SSE"
         isRunning={isRunning}
         controlLabel="Scenario"

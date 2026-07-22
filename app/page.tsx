@@ -5,28 +5,31 @@ const GITHUB_REPO = site.githubRepo;
 
 const PROJECTS = [
   {
-    title: "PayFlow Accounts Payable & Fraud Shield",
+    title: "PayFlow",
     problem:
-      "Manually checking vendor invoices takes hours, and altered bank routing numbers on malicious invoices can slip past employees before anyone notices.",
-    built: "An automated invoice verification tool that cross-checks incoming bills against historical records using fuzzy text matching and flags mismatched routing numbers before a payout is approved.",
+      "Manual invoice checks take hours, and a slightly altered routing number can send money to the wrong account before anyone catches it.",
+    built:
+      "An invoice verification tool that matches vendors to the company registry, checks bank routing against approved profiles, and holds mismatched payouts.",
     tech: ["Python", "FastMCP", "PostgreSQL"],
     github: `${GITHUB_REPO}/tree/main/mcp-server`,
     demoHref: "/payflow",
   },
   {
-    title: "Client Migration & Onboarding Pipeline",
+    title: "Client Migration Pipeline",
     problem:
-      "When onboarding new clients who provide messy, poorly formatted spreadsheets, data dumps frequently break database schemas and cause delays.",
-    built: "An ETL data pipeline that automatically cleans formatting errors, validates data types, and safely organizes client records into secure, isolated database partitions.",
+      "Messy client spreadsheets break database schemas, delay go-live, and leave ops teams cleaning data by hand.",
+    built:
+      "A migration pipeline that validates types, fixes formatting issues, loads records into an isolated client schema, and reports success or hold.",
     tech: ["Python", "Pandas", "PostgreSQL"],
     github: `${GITHUB_REPO}/tree/main/lib/migrate`,
     demoHref: "/migrate",
   },
   {
-    title: "Enterprise Workflow & Approvals Manager",
+    title: "Workflow & Approvals",
     problem:
-      "Growing multi-site operations stall out because high-risk transactions or routine purchases get stuck in email chains without proper management oversight.",
-    built: "A sequential state machine workflow manager that handles routine tasks automatically while explicitly pausing at high-risk financial thresholds to require a manager's click-to-approve sign-off.",
+      "Multi-site requests stall in email chains, and high-value steps can move forward without a clear manager sign-off.",
+    built:
+      "A step-by-step runner that handles routine work, then pauses above $10,000 until a manager approves or rejects.",
     tech: ["TypeScript", "Next.js", "State Machines"],
     github: `${GITHUB_REPO}/tree/main/lib/workflow`,
     demoHref: "/workflow",
@@ -84,7 +87,7 @@ export default function HomePage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="label-opal">What I Built</dt>
+                  <dt className="label-opal">What I built</dt>
                   <dd className="mt-2 text-[15px] leading-relaxed text-opal-muted sm:text-base">
                     {project.built}
                   </dd>
