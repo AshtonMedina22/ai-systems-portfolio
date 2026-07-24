@@ -2,7 +2,7 @@
   "name": "ai-systems-portfolio",
   "version": "1.0.0",
   "private": true,
-  "description": "Portfolio demos for MCP tool use, multi-agent workflows, and evaluation gates.",
+  "description": "Ashton Medina portfolio: live PayFlow FastMCP demo; TypeScript mockups for client migration and workflow approvals.",
   "scripts": {
     "dev": "next dev",
     "dev:mcp": "python mcp-server/payflow_server.py",
@@ -10,7 +10,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:mcp": "python -m pytest mcp-server/test_mcp_tools.py -v"
+    "test:mcp": "python -m pytest mcp-server/test_mcp_tools.py -v",
+    "test:migrate": "python -m pytest mcp-server/test_migrate_pipeline.py -v",
+    "test:workflow": "python -m pytest mcp-server/test_workflow_graph.py -v",
+    "test:python": "python -m pytest mcp-server/test_mcp_tools.py mcp-server/test_migrate_pipeline.py mcp-server/test_workflow_graph.py -v"
   },
   "repository": {
     "type": "git",

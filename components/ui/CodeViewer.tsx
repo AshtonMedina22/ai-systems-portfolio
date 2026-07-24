@@ -7,6 +7,12 @@ export type SourceFile = {
   name: string;
   language: "python" | "typescript" | "sql";
   code: string;
+  /**
+   * runtime      - code the page runs
+   * illustrative - sample snippet
+   * config       - prod shape; not wired in mockup
+   */
+  kind?: "runtime" | "illustrative" | "config";
 };
 
 function languageLabel(language: SourceFile["language"]) {
@@ -55,6 +61,16 @@ export function CodeViewer({ files }: { files: SourceFile[] }) {
           })}
         </div>
         <div className="flex items-center gap-2">
+          {file.kind === "illustrative" ? (
+            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-amber-400/90">
+              Demo sample
+            </span>
+          ) : null}
+          {file.kind === "config" ? (
+            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-sky-400/90">
+              Config (not wired)
+            </span>
+          ) : null}
           <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500">
             {languageLabel(file.language)}
           </span>
@@ -87,44 +103,47 @@ export function CodeViewer({ files }: { files: SourceFile[] }) {
 export function DemoPanelTabs({
   live,
   sourceFiles,
+  liveLabel = "Live demo",
 }: {
   live: React.ReactNode;
   sourceFiles: SourceFile[];
+  /** Matches project framing when useful (Live system demo / Interactive demo). */
+  liveLabel?: string;
 }) {
   const [tab, setTab] = useState<"live" | "source">("live");
 
   return (
     <div className="flex h-full min-h-[420px] flex-col">
       <div
-        className="flex items-center justify-between gap-3 border-b border-slate-500/50 bg-slate-900/70 px-4 py-2"
+        className="flex items-stretch gap-1 border-b border-slate-500/50 bg-slate-900/70 px-2 py-2 sm:px-3"
         role="tablist"
-        aria-label="Console view"
+        aria-label="Demo and how it works"
       >
         <button
           type="button"
           role="tab"
           aria-selected={tab === "live"}
           onClick={() => setTab("live")}
-          className={`text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+          className={`flex-1 rounded-lg px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${
             tab === "live"
-              ? "text-white"
-              : "text-slate-500 hover:text-slate-300"
+              ? "bg-violet-500/25 text-white ring-1 ring-violet-400/40"
+              : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
           }`}
         >
-          Live console
+          {liveLabel}
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={tab === "source"}
           onClick={() => setTab("source")}
-          className={`text-[11px] font-medium tracking-wide transition-colors ${
+          className={`flex-1 rounded-lg px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${
             tab === "source"
-              ? "text-violet-200 underline underline-offset-4"
-              : "text-slate-500 hover:text-slate-300"
+              ? "bg-violet-500/25 text-white ring-1 ring-violet-400/40"
+              : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
           }`}
         >
-          View source
+          How it works
         </button>
       </div>
       <div className="flex-1 min-h-0" role="tabpanel">
@@ -133,8 +152,8 @@ export function DemoPanelTabs({
         ) : (
           <div className="h-full overflow-y-auto px-4 sm:px-5 py-4 space-y-3">
             <p className="text-[13px] leading-relaxed text-slate-400">
-              Backend excerpts that drive this demo - tools, isolation, and
-              stream handlers.
+              Code that matches what you just ran. Config (not wired) tabs are
+              prod shapes only. Demo sample is illustrative.
             </p>
             <CodeViewer files={sourceFiles} />
           </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { site } from "@/lib/site";
 import "./globals.css";
 
 const display = Fraunces({
@@ -25,9 +26,34 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ashton Medina - Systems Architect & Operations Consultant",
-  description:
-    "Ashton Medina builds custom software tools, database pipelines, and automated workflows for multi-site operations - with 10 years of hands-on operational experience.",
+  metadataBase: new URL(site.url),
+  title: site.title,
+  description: site.description,
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: site.url,
+    siteName: site.name,
+    title: site.title,
+    description: site.description,
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: `${site.name} - ${site.role}`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: site.title,
+    description: site.description,
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({

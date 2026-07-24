@@ -10,8 +10,7 @@ export function Footer() {
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-slate-300 sm:text-base">
             If you need someone who understands operations and can build the
-            systems that run them, email me. Open to full-time roles and
-            consulting work.
+            systems that run them, email me.
           </p>
 
           <div className="mt-8">

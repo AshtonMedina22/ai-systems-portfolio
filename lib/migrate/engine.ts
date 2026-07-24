@@ -1,3 +1,8 @@
+﻿/**
+ * TypeScript migration demo for /migrate and /api/migrate (DEMO_MODE=mockup).
+ * Live Pandas / Postgres path is not used here - see config.ts.
+ */
+
 import type { LogEntry } from "@/components/ui/TerminalStream";
 import {
   DEMO_TENANT_SCHEMA,
@@ -6,6 +11,7 @@ import {
   SAMPLE_DATASETS,
   TARGET_SCHEMA,
 } from "./types";
+import { DEMO_MODE } from "./runtime";
 
 function createLogEntry(
   level: LogEntry["level"],
@@ -218,11 +224,9 @@ function resolveProfile(input: MigrationRunInput): DatasetProfile {
 }
 
 /**
- * In-process migration demo: ingest -> map -> validate -> sanitize ->
- * provision isolated PostgreSQL schema (simulated) -> cutover.
- *
- * Stack framing (visible in stream details): Python / Pandas / SQLAlchemy
- * patterns against PostgreSQL multi-tenant schemas. No live DB required.
+ * Interactive migration demo (TypeScript in-process):
+ * ingest -> map -> validate -> sanitize -> simulated tenant schema -> cutover.
+ * No live database required. DEMO_MODE is "mockup".
  */
 export async function* runMigrationEngine(
   input: MigrationRunInput = { datasetKey: "clean" }
@@ -241,8 +245,9 @@ export async function* runMigrationEngine(
       fileName: profile.fileName,
       sourceFormat: profile.sourceFormat,
       rowCount: volume,
-      stack: ["Python", "Pandas", "SQLAlchemy", "PostgreSQL"],
-      note: "Demo runtime mirrors schema validation and tenant writes in-process",
+      demoMode: DEMO_MODE,
+      stack: ["TypeScript", "Next.js", "SSE"],
+      note: "Interactive demo (mockup) - schema checks and tenant cutover run in-process",
     }
   );
 
@@ -253,7 +258,7 @@ export async function* runMigrationEngine(
     "ingest:parser",
     `Parsing ${profile.clientName} ${profile.sourceFormat.toUpperCase()} export (${volume.toLocaleString()} rows)...`,
     {
-      method: "pandas.read_csv",
+      method: "parse_csv",
       file: profile.fileName,
       columns: profile.sourceColumns,
       rowCount: volume,
@@ -453,16 +458,15 @@ export async function* runMigrationEngine(
 
   await sleep(400);
 
-  // Multi-tenant provision
+  // Simulated tenant provision (no live DB)
   yield createLogEntry(
     "tool_call",
-    "tenant:postgres",
-    `Provisioning isolated PostgreSQL schema ${tenantSchema}...`,
+    "tenant:schema",
+    `Preparing isolated tenant space ${tenantSchema} (simulated)...`,
     {
-      method: "CREATE SCHEMA",
+      method: "simulate_tenant_schema",
       tenantSchema,
-      rls: "least-privilege role scoped to tenant schema",
-      sqlalchemy: true,
+      isolation: "schema-per-tenant (demo)",
     }
   );
 
@@ -470,13 +474,12 @@ export async function* runMigrationEngine(
 
   yield createLogEntry(
     "tool_result",
-    "tenant:postgres",
-    `Schema ${tenantSchema} ready with row-level isolation for ${profile.clientName}`,
+    "tenant:schema",
+    `Demo tenant space ${tenantSchema} ready for ${profile.clientName}`,
     {
       tenantSchema,
       status: "TENANT_PROVISIONED",
-      grants: ["SELECT", "INSERT", "UPDATE"],
-      isolation: "schema-per-tenant",
+      isolation: "simulated schema-per-tenant",
     }
   );
 

@@ -1,45 +1,39 @@
-# AI Systems Portfolio
+# Ashton Medina - Systems Portfolio
 
-Interactive demos for finance, migrations, and multi-site ops. Each project uses a split view: business controls on the left, live tool activity on the right.
+Portfolio for Ashton Medina, Systems Architect & Operations Consultant.
 
-## Positioning
+Three demos. Split UI: controls on the left, tool/console activity on the right.
 
-| System | Focus | Integration | Business impact |
-|--------|-------|-------------|-----------------|
-| **PayFlow** `/payflow` | Accounts payable & anti-fraud | SAP / NetSuite-style ledgers via FastMCP | Helps catch bad routing and unknown vendors before payout |
-| **Client Migration Pipeline** `/migrate` | Schema mapping before cutover | SQL / PostgreSQL-style location schema | Flags messy rows and keeps an error trail |
-| **Workflow & Approvals** `/workflow` | Multi-step ops with review gates | Async workflow + manager approve / reject | Pauses high-dollar payouts for sign-off |
+## Mockup vs live
 
-Legacy routes `/sre` → `/migrate`, and `/guardrails` + `/evals` → `/workflow` (permanent redirects).
+| System | Mode | What the site runs | Prod config (not wired on site for mockups) |
+|--------|------|--------------------|---------------------------------------------|
+| **PayFlow** `/payflow` | `live` | FastMCP tools (embedded or HTTP) | `mcp-server/payflow_server.py` |
+| **Client Migration** `/migrate` | `mockup` | `lib/migrate/engine.ts` | `lib/migrate/config.ts`, `mcp-server/migrate_pipeline.py` |
+| **Workflow & Approvals** `/workflow` | `mockup` | `lib/workflow/state-machine.ts` | `lib/workflow/config.ts`, `mcp-server/workflow_graph.py` |
 
-## Project 1 - PayFlow (MCP)
+UI labels (`Interactive demo` / `Live system demo`) come from `DEMO_MODE` in `lib/*/runtime.ts`. Full map: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-**Business problem:** AP teams still key invoices by hand, look up vendors, and check bank routing - slow work that leaves room for invoice spoofing and fake account changes.
+## PayFlow `/payflow` - Live system demo
 
-**Business outcome:** An AP check that validates vendors against a ledger-style registry and flags suspicious routing or unknown vendors before money moves.
+Real Python FastMCP AP / fraud checks.
 
-### Design choice: deterministic orchestration (not an open-ended LLM loop)
-
-Corporate finance cannot treat payout authorization as a free-form model conversation. PayFlow runs fixed steps:
-
-1. Verify vendor identity against the vendor registry (exact tax ID + fuzzy name matching)
+1. Verify vendor against the registry (tax ID + fuzzy name)
 2. Check bank routing against the approved payment profile
-3. Post to the AP ledger only if both checks pass; otherwise block and escalate
+3. Post to the AP ledger only if both pass; otherwise block
 
-**Stack:** Python FastMCP server, JSON-RPC / MCP tools, TypeScript Next.js frontend, Server-Sent Events (SSE).
+**Stack:** Python FastMCP, MCP tools, Next.js, SSE
 
-**MCP tools:** `verify_vendor_entity`, `check_bank_routing`, `post_erp_ledger`
+**Tools:** `verify_vendor_entity`, `check_bank_routing`, `post_erp_ledger`
 
 | Scenario | Outcome |
 |----------|---------|
 | Clean Acme invoice | Vendor match, bank OK, ledger post |
-| Spoofed fraud invoice (name typo + bad routing) | Routing mismatch escalates (no ledger) |
+| Spoofed fraud invoice | Routing mismatch escalates (no ledger) |
 | Unknown vendor | Registry reject, halt |
 
-### Run locally
-
 ```bash
-# Terminal 1 - FastMCP server
+# Terminal 1 - FastMCP server (local HTTP path)
 npm run dev:mcp
 
 # Terminal 2 - Next.js
@@ -48,27 +42,46 @@ npm run dev
 
 Open http://localhost:3000/payflow
 
-### Tests
-
 ```bash
 npm run test:mcp
 ```
 
-### Notes
+- **Hosted (Vercel):** `PAYFLOW_MCP_MODE=embedded` (or `auto`). Same MCP tool schemas run in-process - no separate Python process required.
+- **Local HTTP:** `npm run dev:mcp` + `PAYFLOW_MCP_MODE=auto|http` talks to FastMCP at `http://127.0.0.1:8000/mcp`.
 
-- **Hosted demos (Vercel):** set `PAYFLOW_MCP_MODE=embedded` (or leave `auto`). The Next.js API runs the same MCP tool schemas in-process - no separate Python server required.
-- **Local credibility path:** `npm run dev:mcp` + `PAYFLOW_MCP_MODE=auto|http` connects to live FastMCP at `http://127.0.0.1:8000/mcp`.
+## Client Migration `/migrate` - Interactive demo (mockup)
 
-## Project 2 - Client Migration Pipeline
+TypeScript / Next.js walkthrough. `DEMO_MODE=mockup`. Pick a clean or messy export, run mapping, watch schema checks and a simulated tenant cutover in the console.
 
-Live demo at `/migrate`: pick a clean or messy Mid-West Logistics export, run the mapping, and watch schema checks and tenant cutover in the right-hand log.
+**Site runs:** `lib/migrate/engine.ts` via `getMigrationEngine()`, streamed over SSE. No live database.
 
-## Project 3 - Workflow & Approvals
+**In-repo only (not wired on the site):** `lib/migrate/config.ts` and reference ETL `mcp-server/migrate_pipeline.py`.
 
-Live demo at `/workflow`: start a multi-step ops request, pause high-dollar payouts for Approve / Reject, and watch state transitions in the right-hand log.
+```bash
+npm run dev
+# http://localhost:3000/migrate
+```
+
+## Workflow & Approvals `/workflow` - Interactive demo (mockup)
+
+TypeScript state machine. `DEMO_MODE=mockup`. Start a multi-step request, pause high-dollar payouts for Approve / Reject, watch transitions in the console.
+
+**Site runs:** `lib/workflow/state-machine.ts` via `getWorkflowEngine()`, in-memory checkpoint in `sessions.ts`, SSE.
+
+**In-repo only (not wired on the site):** `lib/workflow/config.ts` and reference graph `mcp-server/workflow_graph.py`.
+
+```bash
+npm run dev
+# http://localhost:3000/workflow
+```
 
 ## Stack
 
 - Next.js App Router, Tailwind, SSE
-- FastMCP (Python), `@modelcontextprotocol/sdk`
-- pytest for ledger logic and MCP client checks
+- Python FastMCP for PayFlow only (`@modelcontextprotocol/sdk`)
+- TypeScript mockups for migrate and workflow
+- pytest for PayFlow ledger logic
+
+```bash
+npm run test:python
+```

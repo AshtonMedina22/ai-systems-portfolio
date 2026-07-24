@@ -17,6 +17,7 @@ import {
   DEMO_TENANT_SCHEMA,
   type DatasetKey,
 } from "@/lib/migrate/types";
+import { MIGRATE_FRAMING } from "@/lib/migrate/runtime";
 import { deriveMigrationKpis } from "@/lib/migrate/executive-summary";
 import type { BadgeTone } from "@/components/ui/Badge";
 import type { LogEntry } from "@/components/ui/TerminalStream";
@@ -146,11 +147,19 @@ export default function MigratePage() {
     <div className="min-h-screen">
       <GlassBox
         title="Client Migration Pipeline"
+        framing={MIGRATE_FRAMING}
         badge="Project 2"
-        purpose="Onboarding pipeline that cleans messy client spreadsheets into isolated client schemas."
-        problem="Messy client spreadsheets break database schemas, delay go-live, and leave ops teams cleaning data by hand."
-        built="A migration pipeline that validates types, fixes formatting issues, loads records into an isolated client schema, and reports success or hold."
-        stack="Python · Pandas · PostgreSQL · SSE"
+        purpose="Onboarding walkthrough that cleans messy client spreadsheets into an isolated client schema."
+        challenge="Messy client spreadsheets break schemas, delay go-live, and leave ops cleaning data by hand."
+        solution="A migration walkthrough that validates types, fixes formatting issues, simulates an isolated client schema, and reports success or hold."
+        impact="Turns messy client sheets into a controlled cutover path so onboarding does not stall on broken imports."
+        architecture="UI picks a dataset or CSV. /api/migrate runs an in-process TypeScript engine and streams steps over SSE. Config scaffolding exists for a live ETL path - not wired on this site."
+        tradeoffs={[
+          "Mockup runtime on Vercel - fast, free, honest demo. Not a full ETL against a real database.",
+          "Config scaffolding shows the production shape without pretending the site runs Pandas or Postgres.",
+          "Simulated tenant schema proves the isolation idea; a live cutover would need real DB credentials and batch controls.",
+        ]}
+        stack="TypeScript, Next.js, SSE"
         isRunning={isRunning}
         controlLabel="Scenario"
         controlPanel={
@@ -278,6 +287,7 @@ export default function MigratePage() {
           <MigrateOpsConsole
             logs={logs}
             isRunning={isRunning}
+            liveLabel={MIGRATE_FRAMING}
             onClear={() => setLogs([])}
           />
         }

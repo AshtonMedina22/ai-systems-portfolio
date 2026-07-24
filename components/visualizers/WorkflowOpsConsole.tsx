@@ -143,6 +143,7 @@ export function WorkflowOpsConsole({
   isRunning,
   amount,
   deciding,
+  liveLabel,
   onApprove,
   onReject,
   onClear,
@@ -151,6 +152,7 @@ export function WorkflowOpsConsole({
   isRunning: boolean;
   amount: number | null;
   deciding?: boolean;
+  liveLabel?: string;
   onApprove?: () => void;
   onReject?: () => void;
   onClear?: () => void;
@@ -171,19 +173,20 @@ export function WorkflowOpsConsole({
             : "idle";
 
   const statusLabel = idle
-    ? "Live - ready for workflow"
+    ? "Ready for workflow"
     : graph.paused
-      ? "Frozen - manager review"
+      ? "Waiting on manager"
       : graph.rejected
         ? "Rejected"
         : graph.done
           ? "Completed"
           : isRunning
-            ? "Live - running steps"
+            ? "Running steps"
             : "Idle";
 
   return (
     <DemoPanelTabs
+      liveLabel={liveLabel}
       sourceFiles={WORKFLOW_SOURCE_FILES}
       live={
         <OpsConsoleShell
@@ -196,7 +199,7 @@ export function WorkflowOpsConsole({
         >
           <div className="rounded-xl border border-slate-500/50 bg-slate-950/35 px-3.5 py-3">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-              Interactive flowchart / state machine
+              Workflow path
             </p>
             <p className="mt-1 text-[13px] text-slate-300">
               Intake - Compliance Check - Budget Approval - Final Execution

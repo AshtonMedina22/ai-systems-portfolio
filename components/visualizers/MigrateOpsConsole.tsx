@@ -50,10 +50,12 @@ function deriveMigrateConsole(logs: LogEntry[]) {
 export function MigrateOpsConsole({
   logs,
   isRunning,
+  liveLabel,
   onClear,
 }: {
   logs: LogEntry[];
   isRunning: boolean;
+  liveLabel?: string;
   onClear?: () => void;
 }) {
   const kpis = useMemo(() => deriveMigrationKpis(logs), [logs]);
@@ -97,9 +99,9 @@ export function MigrateOpsConsole({
           : "warn";
 
   const statusLabel = idle
-    ? "Live - ready for migration"
+    ? "Ready for migration"
     : isRunning
-      ? "Live - ETL running"
+      ? "Migration running"
       : state.cutover === "blocked"
         ? "Cutover held"
         : state.cutover === "ok"
@@ -108,6 +110,7 @@ export function MigrateOpsConsole({
 
   return (
     <DemoPanelTabs
+      liveLabel={liveLabel}
       sourceFiles={MIGRATE_SOURCE_FILES}
       live={
         <OpsConsoleShell
@@ -120,13 +123,14 @@ export function MigrateOpsConsole({
         >
           <div className="rounded-xl border border-slate-500/50 bg-slate-950/35 px-3.5 py-3">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-              Live ETL progress and health
+              Migration progress
             </p>
             <p className="mt-1 text-[13px] text-slate-300">
               Mid-West Logistics onboarding into{" "}
               <span className="font-mono text-violet-300">
                 {state.tenantSchema ?? DEMO_TENANT_SCHEMA}
               </span>
+              {" "}(simulated tenant space)
             </p>
           </div>
 
@@ -158,7 +162,7 @@ export function MigrateOpsConsole({
             </div>
             {idle ? (
               <p className="mt-2 text-[12px] text-slate-400">
-                Hit Run migration on the left to start the live row counter and
+                Hit Run migration on the left to start the row counter and
                 health tiles.
               </p>
             ) : null}
@@ -223,7 +227,7 @@ export function MigrateOpsConsole({
               </p>
               <p className="mt-2 text-[12px] text-slate-500">
                 Color-coded [INFO] / [WARN] / [OK] events will stream here while
-                the ETL runs.
+                the migration runs.
               </p>
             </div>
           ) : null}

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { runMigrationEngine } from "@/lib/migrate/engine";
+import { getMigrationEngine } from "@/lib/migrate/adapter";
 import type { DatasetKey } from "@/lib/migrate/types";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const logGenerator = runMigrationEngine({
+          const logGenerator = getMigrationEngine().run({
             datasetKey,
             csvText,
             clientName,

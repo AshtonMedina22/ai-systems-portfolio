@@ -17,6 +17,7 @@ import {
   SAMPLE_WORKFLOWS,
   type WorkflowScenarioKey,
 } from "@/lib/workflow/types";
+import { WORKFLOW_FRAMING } from "@/lib/workflow/runtime";
 import { Check, X } from "lucide-react";
 import type { BadgeTone } from "@/components/ui/Badge";
 import type { LogEntry } from "@/components/ui/TerminalStream";
@@ -218,11 +219,19 @@ export default function WorkflowPage() {
     <div className="min-h-screen">
       <GlassBox
         title="Workflow & Approvals"
+        framing={WORKFLOW_FRAMING}
         badge="Project 3"
         purpose="Process runner with a manager checkpoint above financial thresholds."
-        problem="Multi-site requests stall in email chains, and high-value steps can move forward without a clear manager sign-off."
-        built={`A step-by-step runner that handles routine work, then pauses when a request crosses $${FINANCIAL_THRESHOLD_USD.toLocaleString()} until a manager approves or rejects.`}
-        stack="TypeScript · Next.js · Checkpoints · SSE"
+        challenge="Multi-site requests stall in email, and high-value steps can move without a clear manager sign-off."
+        solution={`A step runner that handles routine work, then pauses above $${FINANCIAL_THRESHOLD_USD.toLocaleString()} until a manager approves or rejects.`}
+        impact="Routine work proceeds; high-risk spend stops for an explicit manager decision instead of dying in email."
+        architecture="UI starts a scenario. /api/workflow runs an in-process state machine with an interrupt checkpoint; Approve / Reject resumes the run. Config scaffolding for a live graph and checkpoint backend is present but unused."
+        tradeoffs={[
+          "In-memory demo checkpoints - fine for a portfolio run, not durable across deploys.",
+          "Mockup over a full graph/Postgres stack on Vercel - avoids fake claims and keeps hosting simple.",
+          "Threshold gate is explicit and visible; a production queue or timeout layer would sit behind the same UI pattern.",
+        ]}
+        stack="TypeScript, Next.js, SSE"
         isRunning={isRunning}
         controlLabel="Scenario"
         controlPanel={
@@ -327,6 +336,7 @@ export default function WorkflowPage() {
             isRunning={isRunning}
             amount={request.amount}
             deciding={deciding}
+            liveLabel={WORKFLOW_FRAMING}
             onApprove={() => handleDecision("approve")}
             onReject={() => handleDecision("reject")}
             onClear={() => setLogs([])}

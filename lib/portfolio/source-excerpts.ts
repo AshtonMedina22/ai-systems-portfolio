@@ -1,10 +1,11 @@
 import type { SourceFile } from "@/components/ui/CodeViewer";
 
-/** Curated excerpts from the real PayFlow FastMCP / registry / SSE route. */
+/** Excerpts shown in How it works for PayFlow. */
 export const PAYFLOW_SOURCE_FILES: SourceFile[] = [
   {
     name: "erp_registry.py",
     language: "python",
+    kind: "runtime",
     code: `# mcp-server/erp_registry.py - vendor match + bank routing checks
 from difflib import SequenceMatcher
 
@@ -62,6 +63,7 @@ def check_bank_routing(vendor_id: str, routing_number: str, account_number: str)
   {
     name: "payflow_server.py",
     language: "python",
+    kind: "runtime",
     code: `# mcp-server/payflow_server.py - FastMCP tool surface
 from fastmcp import FastMCP
 from erp_registry import (
@@ -98,6 +100,7 @@ if __name__ == "__main__":
   {
     name: "api/payflow/route.ts",
     language: "typescript",
+    kind: "runtime",
     code: `// app/api/payflow/route.ts - SSE stream into the Live console
 import { NextRequest } from "next/server";
 import { runPayFlowAgentEngine } from "@/lib/payflow/agent-engine";
@@ -129,254 +132,149 @@ export async function POST(req: NextRequest) {
   },
 ];
 
-/** Migration pipeline excerpts - TypeScript engine + SQL isolation pattern. */
+/** Migrate: mockup runtime first, then prod config sample. */
 export const MIGRATE_SOURCE_FILES: SourceFile[] = [
   {
-    name: "etl_pipeline.py",
-    language: "python",
-    code: `# etl_pipeline.py - multi-tenant SaaS onboarding (Python / Pandas / PostgreSQL)
-import pandas as pd
-from sqlalchemy import text
-
-def execute_tenant_migration(tenant_id: str, raw_csv_path: str, engine):
-    schema_name = f"tenant_id_{tenant_id}"
-
-    # Enforce isolated database schema per client
-    with engine.begin() as conn:
-        conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name};"))
-        conn.execute(text(f"GRANT USAGE ON SCHEMA {schema_name} TO app_tenant;"))
-
-    # Ingest and sanitize legacy spreadsheets
-    df = pd.read_csv(raw_csv_path)
-    clean_df = (
-        df.dropna(subset=["location_id"])
-        .assign(
-            zip=lambda d: d["zip"]
-            .astype(str)
-            .str.replace(r"\\D", "", regex=True)
-            .str[:5]
-        )
-        .fillna({"zip": "00000", "status": "PENDING"})
-    )
-
-    # Bulk write into the client-isolated schema
-    clean_df.to_sql(
-        "locations",
-        con=engine,
-        schema=schema_name,
-        if_exists="append",
-        index=False,
-    )
-    return {
-        "status": "SUCCESS",
-        "rows_written": len(clean_df),
-        "schema": schema_name,
-        "auto_sanitized_warnings": int((df["zip"].isna()).sum()),
-    }
-`,
-  },
-  {
-    name: "migrate/engine.ts",
+    name: "engine.ts",
     language: "typescript",
-    code: `// lib/migrate/engine.ts - sanitize fields, then provision tenant schema
-yield createLogEntry(
-  "tool_call",
-  "sanitize:fields",
-  "Running type checks and filling or flagging missing required fields...",
-  { method: "sanitize", checks: ["zip", "state", "tax_id", "contact_email"] }
-);
+    kind: "runtime",
+    code: `// lib/migrate/engine.ts
+export async function* runMigrationEngine(input = { datasetKey: "clean" }) {
+  const profile = resolveProfile(input);
+  const tenantSchema = DEMO_TENANT_SCHEMA;
 
-if (zipNormalized > 0) {
-  yield createLogEntry(
-    "warning",
-    "sanitize:zip",
-    \`ZIP warning: auto-normalized \${zipNormalized} sample patterns\`,
-    { status: "ZIP_NORMALIZED", autoSanitized: 2, rowCount: volume }
-  );
-}
-
-yield createLogEntry(
-  "tool_call",
-  "tenant:postgres",
-  \`Provisioning isolated PostgreSQL schema \${tenantSchema}...\`,
-  {
-    method: "CREATE SCHEMA",
-    tenantSchema,
-    rls: "least-privilege role scoped to tenant schema",
-  }
-);
-
-if (blockingMissing >= 2 && profile.key === "corrupted") {
-  yield createLogEntry(
-    "error",
-    "cutover",
-    "Cutover held - fix flagged rows before writing to production tenant space.",
+  yield createLogEntry("info", "pipeline:migrate",
+    \`Starting onboarding for \${profile.clientName}\`,
     {
-      action: "CUTOVER_BLOCKED",
-      rowCount: volume,
-      autoSanitized: 2,
-      validRecords: volume - 2,
-    }
-  );
-  return;
-}
+      demoMode: "mockup",
+      stack: ["TypeScript", "Next.js", "SSE"],
+      rowCount: profile.rowCount,
+    });
 
-yield createLogEntry(
-  "success",
-  "cutover",
-  \`Cutover complete for \${profile.clientName} into \${tenantSchema}.\`,
-  {
-    action: "CUTOVER_COMPLETE",
-    tenantSchema,
-    rowCount: volume,
-    validRecords: volume,
-  }
-);
+  const { mapping, unmapped } = mapColumns(profile.sourceColumns);
+  // validate primary keys, sanitize zip/state/tax_id, then...
+
+  yield createLogEntry("tool_call", "tenant:schema",
+    \`Preparing isolated tenant space \${tenantSchema} (simulated)...\`,
+    { method: "simulate_tenant_schema", tenantSchema });
+
+  // Cutover complete or CUTOVER_BLOCKED based on remaining issues
+}
 `,
   },
   {
-    name: "tenant_rls.sql",
-    language: "sql",
-    code: `-- Multi-tenant isolation pattern used in the cutover step
-CREATE SCHEMA IF NOT EXISTS tenant_id_992;
+    name: "adapter.ts",
+    language: "typescript",
+    kind: "runtime",
+    code: `// lib/migrate/adapter.ts - site calls getMigrationEngine().run(...)
+import { DEMO_MODE } from "./runtime";
+import { runMigrationEngine } from "./engine";
+import { runLiveMigrationStub } from "./live-stub";
 
-CREATE TABLE tenant_id_992.locations (
-  location_id   text PRIMARY KEY,
-  location_name text NOT NULL,
-  address       text,
-  city          text,
-  state         char(2),
-  zip           char(5),
-  tax_id        text,
-  contact_email text
-);
-
-GRANT USAGE ON SCHEMA tenant_id_992 TO app_tenant_992;
-GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA tenant_id_992 TO app_tenant_992;
+export function getMigrationEngine() {
+  // DEMO_MODE is "mockup" on the public site
+  return DEMO_MODE === "live"
+    ? { mode: "live", run: runLiveMigrationStub }
+    : { mode: "mockup", run: runMigrationEngine };
+}
+`,
+  },
+  {
+    name: "config.ts",
+    language: "typescript",
+    kind: "config",
+    code: `// lib/migrate/config.ts
+// Prod shape - unused while DEMO_MODE === "mockup"
+export const migrateProductionConfig = {
+  databaseUrlEnv: "MIGRATE_DATABASE_URL",
+  exampleDatabaseUrl: "postgres://migrate_user:SECRET@db.example:5432/saas_ops",
+  tenantIsolation: "schema-per-tenant",
+  defaultTenantSchema: "tenant_id_992",
+  etlEntrypoint: "mcp-server/migrate_pipeline.py",
+  batchSize: 500,
+  targetTable: "locations",
+} as const;
 `,
   },
 ];
 
-/** Workflow state machine + manager checkpoint excerpts. */
+/** Workflow: mockup runtime first, then prod config sample. */
 export const WORKFLOW_SOURCE_FILES: SourceFile[] = [
-  {
-    name: "state_machine.py",
-    language: "python",
-    code: `# state_machine.py - LangGraph-style durable workflow with manager checkpoint
-from typing import TypedDict
-from langgraph.types import Command, interrupt
-from langgraph.graph import StateGraph, START, END
-
-class WorkflowState(TypedDict):
-    request_amount: float
-    vendor_id: str
-    status: str
-
-def evaluate_financial_threshold(state: WorkflowState) -> Command:
-    """Freeze at Budget Approval when payout clears the $10k limit."""
-    if state["request_amount"] > 10_000.00:
-        # Persist graph state until a manager Approves or Flags for audit
-        decision = interrupt({
-            "reason": "Financial threshold exceeded. Manager authorization required.",
-            "current_node": "evaluate_financial_threshold",
-            "amount": state["request_amount"],
-            "limit": 10_000.00,
-        })
-        if decision == "reject":
-            return Command(goto=END, update={"status": "REJECTED"})
-        return Command(goto="execute_automated_payout", update={"status": "APPROVED"})
-
-    return Command(goto="execute_automated_payout")
-
-def build_workflow():
-    graph = StateGraph(WorkflowState)
-    graph.add_node("intake", lambda s: s)
-    graph.add_node("compliance_check", lambda s: s)
-    graph.add_node("evaluate_financial_threshold", evaluate_financial_threshold)
-    graph.add_node("execute_automated_payout", lambda s: {**s, "status": "DONE"})
-
-    graph.add_edge(START, "intake")
-    graph.add_edge("intake", "compliance_check")
-    graph.add_edge("compliance_check", "evaluate_financial_threshold")
-    graph.add_edge("execute_automated_payout", END)
-    return graph.compile(checkpointer=True)
-`,
-  },
   {
     name: "state-machine.ts",
     language: "typescript",
-    code: `// lib/workflow/state-machine.ts - demo checkpoint used by the Live Visual Console
-const overThreshold =
-  typeof amount === "number" && amount > FINANCIAL_THRESHOLD_USD;
+    kind: "runtime",
+    code: `// lib/workflow/state-machine.ts
+export async function* runWorkflowEngine(scenarioKey, sessionId?) {
+  const request = SAMPLE_WORKFLOWS[scenarioKey];
+  const session = createSession(sessionId ?? \`wf-\${Date.now()}\`);
 
-if (overThreshold) {
-  yield createLogEntry(
-    "warning",
-    "node:awaiting_approval",
-    \`Workflow paused. Manager sign-off needed before the $\${amount.toLocaleString()} payout can run.\`,
+  // Intake -> Compliance Check -> Financial Threshold -> Final Execution
+  yield createLogEntry("info", "workflow:session",
+    \`Started workflow \${request.requestId}\`,
     {
-      action: "AWAITING_APPROVAL",
-      sessionId: id,
-      amount,
-      threshold: FINANCIAL_THRESHOLD_USD,
-      checkpoint: true,
-      node: "awaiting_approval",
-    }
-  );
+      demoMode: "mockup",
+      runtime: "in-process",
+      note: "TypeScript state machine",
+    });
 
-  const decision = await waitForDecision(session);
+  const overThreshold =
+    typeof request.amount === "number" &&
+    request.amount > FINANCIAL_THRESHOLD_USD;
 
-  if (decision === "reject") {
-    markSessionRejected(session);
-    yield createLogEntry(
-      "error",
-      "workflow:checkpoint",
-      \`Manager rejected \${request.requestId}. Payout did not run.\`,
-      { action: "REJECTED", sessionId: id, node: "rejected" }
-    );
-    return;
+  if (overThreshold) {
+    yield createLogEntry("warning", "node:awaiting_approval",
+      "Workflow paused. Manager sign-off needed.",
+      { action: "AWAITING_APPROVAL", sessionId: session.id });
+
+    const decision = await waitForDecision(session);
+    if (decision === "reject") return;
   }
 
-  yield createLogEntry(
-    "success",
-    "workflow:checkpoint",
-    "Manager approved. Resuming from checkpoint toward final execution.",
-    { action: "APPROVED", sessionId: id, node: "financial_threshold" }
-  );
+  // Final execution, then COMPLETED
 }
 `,
   },
   {
     name: "sessions.ts",
     language: "typescript",
-    code: `// lib/workflow/sessions.ts - in-memory checkpoint for Approve / Flag for audit
-type Decision = "approve" | "reject";
-
-const sessions = new Map<string, {
-  resolve: (decision: Decision) => void;
-  status: "open" | "done" | "rejected";
-}>();
-
-export function createSession(id: string) {
-  let resolve!: (decision: Decision) => void;
-  const ready = new Promise<Decision>((r) => {
-    resolve = r;
+    kind: "runtime",
+    code: `// lib/workflow/sessions.ts - Approve / Reject checkpoint (mockup)
+export function waitForDecision(session: WorkflowSession) {
+  session.status = "paused";
+  return new Promise((resolve) => {
+    session.resume = (decision) => {
+      session.decision = decision;
+      session.status = decision === "approve" ? "running" : "rejected";
+      session.resume = undefined;
+      resolve(decision);
+    };
   });
-  sessions.set(id, { resolve, status: "open" });
-  return { id, ready };
 }
 
-export function waitForDecision(session: { id: string; ready: Promise<Decision> }) {
-  return session.ready;
+export function submitDecision(sessionId: string, decision: WorkflowDecision) {
+  const session = getSession(sessionId);
+  if (!session || session.status !== "paused" || !session.resume) {
+    return { ok: false, error: "Not waiting for manager sign-off." };
+  }
+  session.resume(decision);
+  return { ok: true };
 }
-
-export function submitDecision(sessionId: string, decision: Decision) {
-  const entry = sessions.get(sessionId);
-  if (!entry || entry.status !== "open") return false;
-  entry.status = decision === "approve" ? "done" : "rejected";
-  entry.resolve(decision);
-  return true;
-}
+`,
+  },
+  {
+    name: "config.ts",
+    language: "typescript",
+    kind: "config",
+    code: `// lib/workflow/config.ts
+// Prod shape - unused while DEMO_MODE === "mockup"
+export const workflowProductionConfig = {
+  graphEntrypoint: "mcp-server/workflow_graph.py",
+  checkpointBackend: "postgres",
+  checkpointUrlEnv: "WORKFLOW_CHECKPOINT_URL",
+  interruptThresholdUsd: 10_000,
+  approvalTimeoutMs: 15 * 60 * 1000,
+} as const;
 `,
   },
 ];

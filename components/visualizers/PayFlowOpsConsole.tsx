@@ -63,11 +63,13 @@ export function PayFlowOpsConsole({
   logs,
   isRunning,
   invoice,
+  liveLabel,
   onClear,
 }: {
   logs: LogEntry[];
   isRunning: boolean;
   invoice: InvoicePayload;
+  liveLabel?: string;
   onClear?: () => void;
 }) {
   const [noticeOpen, setNoticeOpen] = useState(false);
@@ -85,9 +87,9 @@ export function PayFlowOpsConsole({
         : "warn";
 
   const statusLabel = idle
-    ? "Live - listening for invoices"
+    ? "Ready for invoices"
     : isRunning
-      ? "Live - checking invoice"
+      ? "Checking invoice"
       : consoleState.blockedUnknown
         ? "Unknown vendor blocked"
         : consoleState.escalated
@@ -101,6 +103,7 @@ export function PayFlowOpsConsole({
 
   return (
     <DemoPanelTabs
+      liveLabel={liveLabel}
       sourceFiles={PAYFLOW_SOURCE_FILES}
       live={
         <OpsConsoleShell

@@ -13,6 +13,7 @@ import {
   ScenarioOption,
 } from "@/components/ui/DemoControls";
 import { SAMPLE_INVOICES, InvoicePayload } from "@/lib/payflow/types";
+import { PAYFLOW_FRAMING } from "@/lib/payflow/runtime";
 import {
   deriveExecutiveKpis,
   RiskTone,
@@ -133,11 +134,19 @@ export default function PayFlowPage() {
     <div className="min-h-screen">
       <GlassBox
         title="PayFlow"
+        framing={PAYFLOW_FRAMING}
         badge="Project 1"
         purpose="Invoice verification that flags mismatched vendor bank details before payout."
-        problem="Manual invoice checks take hours, and a slightly altered routing number can send money to the wrong account before anyone catches it."
-        built="An invoice verification tool that matches vendors to the company registry, checks bank routing against approved profiles, and posts clean invoices to the ledger - or holds them."
-        stack="Python · FastMCP · PostgreSQL · SSE"
+        challenge="Manual invoice checks take hours, and a slightly altered routing number can send money to the wrong account before anyone catches it."
+        solution="An invoice verification path that matches vendors to the registry, checks bank routing against approved profiles, and holds mismatched payouts."
+        impact="Catches bad routing and vendor mismatches before money moves, and gives AP a clear hold path instead of hoping someone notices."
+        architecture="UI posts an invoice to /api/payflow. That route drives a live FastMCP tool path - verify vendor, check routing, then post or hold - and streams each step over SSE into the console."
+        tradeoffs={[
+          "Live MCP on Vercel means cold starts and env wiring - slower first run than a pure mock, but the tool path is real.",
+          "Deterministic tool sequence over an open-ended LLM agent - clearer demos and safer money decisions, less agent theater.",
+          "Embedded MCP fallback when HTTP MCP is down keeps the portfolio demo up; local FastMCP is the fuller integration story.",
+        ]}
+        stack="Python, FastMCP, Next.js, SSE"
         isRunning={isRunning}
         controlLabel="Scenario"
         controlPanel={
@@ -249,6 +258,7 @@ export default function PayFlowPage() {
             logs={logs}
             isRunning={isRunning}
             invoice={activeInvoice}
+            liveLabel={PAYFLOW_FRAMING}
             onClear={() => setLogs([])}
           />
         }

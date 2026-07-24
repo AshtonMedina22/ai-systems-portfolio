@@ -1,3 +1,8 @@
+﻿/**
+ * TypeScript workflow demo for /workflow and /api/workflow (DEMO_MODE=mockup).
+ * Live LangGraph path is not used here - see config.ts.
+ */
+
 import { LogEntry } from "@/components/ui/TerminalStream";
 import {
   createSession,
@@ -14,6 +19,7 @@ import {
   type WorkflowRequest,
   type WorkflowScenarioKey,
 } from "./types";
+import { DEMO_MODE } from "./runtime";
 
 function createLogEntry(
   level: LogEntry["level"],
@@ -61,14 +67,15 @@ function nodeTransition(
     from,
     to,
     audit: entry,
-    pattern: "langgraph-style-checkpoint",
+    pattern: "checkpoint",
   });
 }
 
 /**
- * In-process state machine that mirrors a LangGraph durable graph:
+ * Interactive workflow demo (TypeScript in-process state machine):
  * Intake -> Compliance Check -> Financial Threshold -> Final Execution
- * with optional pause/checkpoint when amount exceeds the threshold.
+ * with optional pause when amount exceeds the threshold.
+ * DEMO_MODE is "mockup".
  */
 export async function* runWorkflowEngine(
   scenarioKey: WorkflowScenarioKey,
@@ -100,8 +107,9 @@ export async function* runWorkflowEngine(
       requestId: request.requestId,
       amount: request.amount,
       site: request.site,
+      demoMode: DEMO_MODE,
       runtime: "in-process",
-      note: "TypeScript state machine simulating LangGraph checkpointing for hosted demos.",
+      note: "Interactive demo (mockup) - TypeScript state machine with in-memory checkpoint.",
     }
   );
 
@@ -119,7 +127,7 @@ export async function* runWorkflowEngine(
     "node:intake",
     "Pulling request packet and routing to the next step...",
     {
-      method: "graph.invoke",
+      method: "step",
       node: "intake",
       edges: ["compliance_check"],
       payload: {
@@ -150,7 +158,7 @@ export async function* runWorkflowEngine(
     "node:compliance_check",
     "Running compliance checklist for this request type...",
     {
-      method: "graph.invoke",
+      method: "step",
       node: "compliance_check",
       checks: ["site_policy", "required_fields", "vendor_or_sku_present"],
     }
@@ -196,7 +204,7 @@ export async function* runWorkflowEngine(
         ? "No cash payout on this path - threshold check skipped."
         : `Amount $${amount.toLocaleString()} is under the $${FINANCIAL_THRESHOLD_USD.toLocaleString()} limit.`,
     {
-      method: "graph.invoke",
+      method: "step",
       node: "financial_threshold",
       amount,
       threshold: FINANCIAL_THRESHOLD_USD,
@@ -292,7 +300,7 @@ export async function* runWorkflowEngine(
       "node:final_execution",
       "Scheduling inventory transfer between sites...",
       {
-        method: "graph.invoke",
+        method: "step",
         node: "final_execution",
         operation: "inventory_reallocation",
         subject: request.subject,
@@ -315,7 +323,7 @@ export async function* runWorkflowEngine(
       "node:final_execution",
       `Releasing $${amount!.toLocaleString()} contract payout...`,
       {
-        method: "graph.invoke",
+        method: "step",
         node: "final_execution",
         operation: "contract_payout",
         amount,

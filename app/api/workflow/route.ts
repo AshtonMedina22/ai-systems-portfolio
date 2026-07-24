@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { runWorkflowEngine } from "@/lib/workflow/state-machine";
+import { getWorkflowEngine } from "@/lib/workflow/adapter";
 import { submitDecision } from "@/lib/workflow/sessions";
 import type {
   WorkflowDecision,
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const logGenerator = runWorkflowEngine(scenario);
+          const logGenerator = getWorkflowEngine().run(scenario);
 
           for await (const logEntry of logGenerator) {
             const chunk = `data: ${JSON.stringify(logEntry)}\n\n`;
