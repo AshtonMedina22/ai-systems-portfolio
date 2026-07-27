@@ -1,6 +1,6 @@
 # Ashton Medina - Systems Portfolio
 
-Portfolio for Ashton Medina, Systems Architect & Operations Consultant.
+Portfolio for Ashton Medina, Business Systems Architect - AI & Automation.
 
 Three demos. Split UI: controls on the left, tool/console activity on the right.
 

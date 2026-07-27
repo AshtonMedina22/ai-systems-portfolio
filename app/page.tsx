@@ -18,7 +18,7 @@ const PROJECTS = [
       "Catches bad routing and vendor mismatches before money moves, and gives AP a clear hold path instead of hoping someone notices.",
     tech: ["Python", "FastMCP", "Next.js"],
     demoHref: "/payflow",
-    cta: "Open live demo",
+    codeHref: `${site.githubRepo}/blob/main/mcp-server/payflow_server.py`,
   },
   {
     title: "Client Migration Pipeline",
@@ -33,7 +33,7 @@ const PROJECTS = [
       "Turns messy client sheets into a controlled cutover path so onboarding does not stall on broken imports.",
     tech: ["TypeScript", "Next.js", "SSE"],
     demoHref: "/migrate",
-    cta: "Open demo",
+    codeHref: `${site.githubRepo}/blob/main/lib/migrate/engine.ts`,
   },
   {
     title: "Workflow & Approvals",
@@ -48,7 +48,34 @@ const PROJECTS = [
       "Routine work proceeds; high-risk spend stops for an explicit manager decision instead of dying in email.",
     tech: ["TypeScript", "Next.js", "SSE"],
     demoHref: "/workflow",
-    cta: "Open demo",
+    codeHref: `${site.githubRepo}/blob/main/lib/workflow/state-machine.ts`,
+  },
+] as const;
+
+const DELIVER_AREAS = [
+  {
+    title: "End-to-End Enterprise Operations & ERP Platforms",
+    body: "Owning the complete digital core - CRM, sales, vendor pipelines, payroll, and accounting - replacing fragmented spreadsheets with unified platforms that scale operating capacity (e.g., 2.5x capacity with zero headcount expansion).",
+  },
+  {
+    title: "Cross-Functional Systems Integration",
+    body: "Connecting disconnected SaaS tools and legacy data streams so marketing, finance, and operations all run on a single source of truth.",
+  },
+  {
+    title: "Data Migration & Multi-Tenant Architecture",
+    body: "Leading massive migrations and onboarding pipelines (such as 3,000+ customer onboardings and thousands of enterprise accounts) without service disruption.",
+  },
+  {
+    title: "Governed AI & Workflow Automation",
+    body: "Deploying AI and automated workflows with built-in safety rails - such as mandatory manager sign-offs and auditable trails - so automation solves problems instead of creating risks.",
+  },
+  {
+    title: "Operational Standardization & Enablement",
+    body: "Building the reusable SOP libraries, templates, and compliance frameworks that keep multi-site operations (across 400+ locations) consistent and inspection-ready.",
+  },
+  {
+    title: "Operator-Grade System Design",
+    body: "Building software from firsthand experience running physical operations, managing compliance, and handling day-to-day team usage - so the systems actually hold up when real people use them.",
   },
 ] as const;
 
@@ -74,21 +101,29 @@ export default function HomePage() {
   return (
     <main className="relative z-10">
       <section className="mx-auto max-w-3xl px-6 pt-20 pb-20 text-center sm:pt-28 sm:pb-24">
-        <h1 className="font-display text-4xl font-medium tracking-tight text-opal-main sm:text-5xl lg:text-6xl">
+        <p>
+          <span className="eyebrow-opal">{site.role}</span>
+        </p>
+
+        <h1 className="mt-4 font-display text-4xl font-medium tracking-tight text-opal-main sm:text-5xl lg:text-6xl">
           {site.name}
         </h1>
-        <p className="mt-4">
-          <span className="eyebrow-opal">
-            Systems Architect &amp; Operations Consultant
-          </span>
-        </p>
 
         <p className="mx-auto mt-8 max-w-2xl text-[17px] leading-relaxed text-opal-main sm:text-lg">
-          Ops mind, systems build - I design the tools that take the grind out
-          of day-to-day admin.
+          I build the business systems companies run on - ERP platforms,
+          integrations, and automated workflows, with AI built in where it
+          earns its place under human oversight. Ten years turning fragmented
+          tools and manual process into platforms people trust.
         </p>
 
-        <p className="mt-6">
+        <p className="mx-auto mt-6 max-w-2xl text-[15px] leading-relaxed text-opal-muted sm:text-base">
+          Before I architected systems, I ran one - every day, on the ground,
+          accountable for the people, the compliance, and the numbers, not just
+          the software. That&apos;s the difference you can feel in what I build:
+          it&apos;s made by someone who&apos;s had to actually use it.
+        </p>
+
+        <p className="mt-8">
           <a
             href={contactMailto}
             className="text-[15px] font-medium text-opal-violet underline-offset-4 hover:underline sm:text-base"
@@ -96,12 +131,33 @@ export default function HomePage() {
             {site.email}
           </a>
         </p>
+      </section>
 
-        <p className="mx-auto mt-10 max-w-2xl text-[15px] leading-relaxed text-opal-muted sm:text-base">
-          Ten years running multi-site operations - workflows, compliance,
-          vendor accounts - then building the software, pipelines, and
-          automation that fix those bottlenecks.
-        </p>
+      <section
+        id="where-i-deliver"
+        className="mx-auto max-w-5xl scroll-mt-24 px-6 pb-20 sm:pb-24"
+      >
+        <div className="mb-12 text-center sm:text-left">
+          <h2 className="font-display text-2xl font-medium tracking-tight text-opal-main sm:text-3xl">
+            Where I Deliver
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {DELIVER_AREAS.map((area) => (
+            <article
+              key={area.title}
+              className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm sm:p-7"
+            >
+              <h3 className="font-display text-lg font-medium tracking-tight text-opal-main sm:text-xl">
+                {area.title}
+              </h3>
+              <p className="mt-3 text-[15px] leading-relaxed text-opal-muted sm:text-base">
+                {area.body}
+              </p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section
@@ -169,13 +225,21 @@ export default function HomePage() {
                   </div>
                 </dl>
 
-                <div className="mt-8">
+                <div className="mt-8 flex flex-wrap items-center gap-3">
                   <Link
                     href={project.demoHref}
                     className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-opal-purple to-opal-violet px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-shadow hover:shadow-violet-500/30"
                   >
-                    {project.cta}
+                    Open the demo
                   </Link>
+                  <a
+                    href={project.codeHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-xl border border-opal-purple/40 bg-white px-6 py-3 text-sm font-semibold text-opal-purple transition-colors hover:border-opal-purple hover:bg-violet-50"
+                  >
+                    Read the code
+                  </a>
                 </div>
               </article>
             );
