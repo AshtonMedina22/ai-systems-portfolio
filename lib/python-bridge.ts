@@ -3,7 +3,7 @@
  *
  * NOT used by the public site while DEMO_MODE=mockup (default).
  * Site paths: lib/migrate/engine.ts and lib/workflow/state-machine.ts.
- * See lib/*/live-stub.ts and ARCHITECTURE.md.
+ * See lib/migrate/live-stub.ts, lib/workflow/live-stub.ts, and ARCHITECTURE.md.
  */
 import { spawn, type ChildProcessWithoutNullStreams } from "child_process";
 import path from "path";
