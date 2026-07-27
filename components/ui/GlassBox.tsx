@@ -6,11 +6,19 @@ export interface GlassBoxProps {
   /** From DEMO_MODE: "Interactive demo" | "Live system demo". */
   framing?: string;
   purpose?: string;
+  /** One-line business result near the title. */
+  valueLine?: string;
+  /** Explicit control gate - short, executive-readable. */
+  controlStatement?: string;
   challenge?: string;
   solution?: string;
   impact?: string;
+  /** Callout for mismatch / hold / review path. */
+  whenWrong?: React.ReactNode;
   /** How the system fits together - short, human. */
   architecture?: string;
+  /** Visual flow diagram shown in the architecture section. */
+  architectureVisual?: React.ReactNode;
   /** 2-3 real trade-offs for this project. */
   tradeoffs?: readonly string[];
   stack?: string;
@@ -36,10 +44,14 @@ export function GlassBox({
   badge,
   framing,
   purpose,
+  valueLine,
+  controlStatement,
   challenge,
   solution,
   impact,
+  whenWrong,
   architecture,
+  architectureVisual,
   tradeoffs,
   stack,
   controlPanel,
@@ -55,7 +67,11 @@ export function GlassBox({
   const challengeText = challenge ?? problem;
   const solutionText = solution ?? built;
   const hasBrief = Boolean(challengeText || solutionText || impact);
-  const hasArch = Boolean(architecture || (tradeoffs && tradeoffs.length > 0));
+  const hasArch = Boolean(
+    architecture ||
+      architectureVisual ||
+      (tradeoffs && tradeoffs.length > 0)
+  );
 
   return (
     <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
@@ -73,6 +89,17 @@ export function GlassBox({
         {lead ? (
           <p className="mt-3 text-[15px] leading-relaxed text-opal-muted sm:text-base">
             {lead}
+          </p>
+        ) : null}
+        {valueLine ? (
+          <p className="mt-3 text-[15px] leading-relaxed text-opal-main sm:text-base">
+            {valueLine}
+          </p>
+        ) : null}
+        {controlStatement ? (
+          <p className="mt-4 border-l-2 border-slate-300 pl-3.5 text-[14px] leading-relaxed text-opal-muted sm:text-[15px]">
+            <span className="font-semibold text-opal-main">Control. </span>
+            {controlStatement}
           </p>
         ) : null}
       </header>
@@ -122,14 +149,26 @@ export function GlassBox({
         </p>
       ) : null}
 
+      {whenWrong ? (
+        <section
+          aria-label="What happens when it is wrong"
+          className="mt-8 max-w-4xl border-t border-slate-200 pt-6"
+        >
+          {whenWrong}
+        </section>
+      ) : null}
+
       {hasArch ? (
         <section
           aria-label="Architecture and trade-offs"
           className="mt-8 max-w-4xl border-t border-slate-200 pt-6"
         >
           <p className="label-opal">Architecture</p>
+          {architectureVisual ? architectureVisual : null}
           {architecture ? (
-            <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-opal-muted">
+            <p
+              className={`${architectureVisual ? "mt-4" : "mt-2"} max-w-3xl text-[15px] leading-relaxed text-opal-muted`}
+            >
               {architecture}
             </p>
           ) : null}

@@ -15,7 +15,7 @@ const PROJECTS = [
     solution:
       "An invoice verification path that matches vendors to the registry, checks bank routing against approved profiles, and holds mismatched payouts.",
     impact:
-      "Catches bad routing and vendor mismatches before money moves, and gives AP a clear hold path instead of hoping someone notices.",
+      "Replaces manual keying of every invoice check - bad vendor or routing is held before money moves, with a clear path for AP review.",
     tech: ["Python", "FastMCP", "Next.js"],
     demoHref: "/payflow",
     codeHref: `${site.githubRepo}/blob/main/mcp-server/payflow_server.py`,

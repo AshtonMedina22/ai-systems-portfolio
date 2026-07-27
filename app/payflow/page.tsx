@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { GlassBox } from "@/components/ui/GlassBox";
 import { PayFlowOpsConsole } from "@/components/visualizers/PayFlowOpsConsole";
+import { PayFlowArchitectureFlow } from "@/components/visualizers/PayFlowArchitectureFlow";
 import { Badge } from "@/components/ui/Badge";
 import {
   DemoPrimaryButton,
@@ -137,10 +138,57 @@ export default function PayFlowPage() {
         framing={PAYFLOW_FRAMING}
         badge="Project 1"
         purpose="Invoice verification that flags mismatched vendor bank details before payout."
+        valueLine="Replaces manual keying of every invoice, and stops bad vendor or routing before money moves."
+        controlStatement="Nothing posts to the ledger without passing both checks - vendor match against the registry, and bank routing against the approved profile."
         challenge="Manual invoice checks take hours, and a slightly altered routing number can send money to the wrong account before anyone catches it."
         solution="An invoice verification path that matches vendors to the registry, checks bank routing against approved profiles, and holds mismatched payouts."
-        impact="Catches bad routing and vendor mismatches before money moves, and gives AP a clear hold path instead of hoping someone notices."
-        architecture="UI posts an invoice to /api/payflow. That route drives a live FastMCP tool path - verify vendor, check routing, then post or hold - and streams each step over SSE into the console."
+        impact="Bad vendor or routing is held before money moves, with a clear path for AP review instead of hoping someone notices."
+        whenWrong={
+          <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-4 sm:px-5 sm:py-5">
+            <p className="label-opal">What happens when it is wrong</p>
+            <dl className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <dt className="text-sm font-semibold text-opal-main">
+                  Mismatch path
+                </dt>
+                <dd className="mt-1 text-[14px] leading-relaxed text-opal-muted sm:text-[15px]">
+                  A mistyped vendor name or routing that does not match the
+                  registry fails the gate. The run intercepts before any ledger
+                  post.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-semibold text-opal-main">
+                  Payment held
+                </dt>
+                <dd className="mt-1 text-[14px] leading-relaxed text-opal-muted sm:text-[15px]">
+                  The payout is flagged and held. Ops console status moves to
+                  intercepted or blocked - nothing clears for payment.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-semibold text-opal-main">
+                  Who reviews
+                </dt>
+                <dd className="mt-1 text-[14px] leading-relaxed text-opal-muted sm:text-[15px]">
+                  AP or a manager reviews the escalation notice the live run
+                  surfaces in the ops console.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-semibold text-opal-main">
+                  How it is released
+                </dt>
+                <dd className="mt-1 text-[14px] leading-relaxed text-opal-muted sm:text-[15px]">
+                  A person resolves the hold after review. This demo stops at
+                  intercept and notice - it does not auto-clear the payment.
+                </dd>
+              </div>
+            </dl>
+          </div>
+        }
+        architectureVisual={<PayFlowArchitectureFlow />}
+        architecture="Each step streams into the ops console over SSE. Pass posts to the ledger; fail holds the payment and raises the escalation notice you see in the live run."
         tradeoffs={[
           "Live MCP on Vercel means cold starts and env wiring - slower first run than a pure mock, but the tool path is real.",
           "Deterministic tool sequence over an open-ended LLM agent - clearer demos and safer money decisions, less agent theater.",
