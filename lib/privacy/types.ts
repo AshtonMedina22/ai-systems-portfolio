@@ -1,4 +1,8 @@
-export type PrivacyScenarioKey = "clean" | "embedded_pii" | "bulk_block";
+export type PrivacyScenarioKey =
+  | "clean"
+  | "embedded_pii"
+  | "bulk_block"
+  | "custom";
 
 export type FindingKind =
   | "ssn"
@@ -18,6 +22,23 @@ export interface PrivacyFinding {
   replacement: string;
 }
 
+export interface SecurityReviewCase {
+  caseId: string;
+  status: "opened" | "acknowledged";
+  exceptionCode: string;
+  findingCount: number;
+  kinds: FindingKind[];
+  openedAt: string;
+  acknowledgedAt?: string;
+  actor?: string;
+}
+
+export interface PrivacyOverride {
+  suppressedKinds: FindingKind[];
+  reason: string;
+  actor: string;
+}
+
 export interface PrivacyReceipt {
   receiptId: string;
   scenario: PrivacyScenarioKey;
@@ -27,10 +48,12 @@ export interface PrivacyReceipt {
   exceptionCode: string | null;
   trailHash: string;
   at: string;
+  securityReview: SecurityReviewCase | null;
+  override: PrivacyOverride | null;
 }
 
 export interface PrivacyScenario {
-  key: PrivacyScenarioKey;
+  key: Exclude<PrivacyScenarioKey, "custom">;
   label: string;
   detail: string;
   tone: "default" | "danger";
@@ -38,7 +61,10 @@ export interface PrivacyScenario {
 }
 
 /** Synthetic demo payloads only - no real customer data. */
-export const SAMPLE_SCENARIOS: Record<PrivacyScenarioKey, PrivacyScenario> = {
+export const SAMPLE_SCENARIOS: Record<
+  Exclude<PrivacyScenarioKey, "custom">,
+  PrivacyScenario
+> = {
   clean: {
     key: "clean",
     label: "Clean support ticket",
@@ -61,7 +87,7 @@ export const SAMPLE_SCENARIOS: Record<PrivacyScenarioKey, PrivacyScenario> = {
     key: "bulk_block",
     label: "Bulk restricted export",
     detail:
-      "Many sensitive tokens in one payload - should block pre-transit and log an exception",
+      "Many sensitive tokens in one payload - should block pre-transit and open a security review case",
     tone: "danger",
     sourceText: [
       "Bulk export request for overnight processing:",
@@ -92,3 +118,38 @@ export const PLACEHOLDERS: Record<FindingKind, string> = {
 
 /** Block when finding count reaches this threshold (bulk restricted). */
 export const BULK_FINDING_THRESHOLD = 8;
+
+/** Reject oversized inbound payloads before scanning. */
+export const MAX_PAYLOAD_CHARS = 4000;
+
+export const PRIVACY_REVIEWER_ROLE = "Security reviewer";
+
+export const FINDING_KINDS: FindingKind[] = [
+  "ssn",
+  "credit_card",
+  "email",
+  "api_key",
+  "phone",
+];
+
+export function isFindingKind(value: unknown): value is FindingKind {
+  return (
+    typeof value === "string" &&
+    (FINDING_KINDS as string[]).includes(value)
+  );
+}
+
+export function isPresetScenarioKey(
+  value: unknown
+): value is Exclude<PrivacyScenarioKey, "custom"> {
+  return (
+    typeof value === "string" &&
+    Object.prototype.hasOwnProperty.call(SAMPLE_SCENARIOS, value)
+  );
+}
+
+export function isPrivacyScenarioKey(
+  value: unknown
+): value is PrivacyScenarioKey {
+  return value === "custom" || isPresetScenarioKey(value);
+}

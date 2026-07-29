@@ -2,7 +2,7 @@
 
 Portfolio for Ashton Medina, Business Systems Architect - AI & Automation.
 
-Three demos. Split UI: controls on the left, tool/console activity on the right.
+Four demos. Split UI: controls on the left, tool/console activity on the right.
 
 ## Mockup vs live
 
@@ -10,7 +10,8 @@ Three demos. Split UI: controls on the left, tool/console activity on the right.
 |--------|------|--------------------|---------------------------------------------|
 | **PayFlow** `/payflow` | `live` | FastMCP tools (embedded or HTTP) | `mcp-server/payflow_server.py` |
 | **Client Migration** `/migrate` | `mockup` | `lib/migrate/engine.ts` | `lib/migrate/config.ts`, `mcp-server/migrate_pipeline.py` |
-| **Workflow & Approvals** `/workflow` | `mockup` | `lib/workflow/state-machine.ts` | `lib/workflow/config.ts`, `mcp-server/workflow_graph.py` |
+| **Workflow Governance** `/workflow` | `mockup` | `lib/workflow/state-machine.ts` | `lib/workflow/config.ts`, `mcp-server/workflow_graph.py` |
+| **Data Privacy** `/privacy` | `mockup` | `lib/privacy/engine.ts` | `lib/privacy/config.ts` |
 
 UI labels (`Interactive demo` / `Live system demo`) come from `DEMO_MODE` in `lib/*/runtime.ts`. Full map: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -62,7 +63,7 @@ npm run dev
 # http://localhost:3000/migrate
 ```
 
-## Workflow & Approvals `/workflow` - Interactive demo (mockup)
+## Workflow Governance `/workflow` - Interactive demo (mockup)
 
 TypeScript state machine. `DEMO_MODE=mockup`. Start a multi-step request, pause high-dollar payouts for Approve / Reject, watch transitions in the console.
 
@@ -75,11 +76,28 @@ npm run dev
 # http://localhost:3000/workflow
 ```
 
+## Data Privacy `/privacy` - Interactive demo (mockup)
+
+TypeScript redaction proxy. `DEMO_MODE=mockup`. Run a clean ticket, embedded PII payload, or bulk restricted export and watch pass / sanitize / block decisions with a privacy receipt.
+
+**Site runs:** `lib/privacy/engine.ts` via `getPrivacyEngine()`, streamed over SSE. Stateless in-process scan only.
+
+**In-repo only (not wired on the site):** `lib/privacy/config.ts` (edge-middleware production shape).
+
+```bash
+npm run dev
+# http://localhost:3000/privacy
+```
+
+```bash
+npm run test:privacy-engine
+```
+
 ## Stack
 
 - Next.js App Router, Tailwind, SSE
 - Python FastMCP for PayFlow only (`@modelcontextprotocol/sdk`)
-- TypeScript mockups for migrate and workflow
+- TypeScript mockups for migrate, workflow, and privacy
 - pytest for PayFlow ledger logic
 
 ```bash

@@ -287,34 +287,33 @@ export const PRIVACY_SOURCE_FILES: SourceFile[] = [
     language: "typescript",
     kind: "runtime",
     code: `// lib/privacy/engine.ts
-// Public runtime: deterministic scan, sanitize or block, privacy receipt.
+// Public runtime: size gate, deterministic scan, sanitize/block, review case.
+// Raw inbound text is never written into SSE event payloads.
 
-const findings = scanText(sourceText);
+const findings = scanText(sourceText, { suppressKinds });
 const { decision, exceptionCode } = decideProxy(findings, scenarioKey);
 const sanitizedText =
   decision === "blocked" ? "" : redactText(sourceText, findings);
 
 if (decision === "blocked") {
+  yield createLogEntry("warning", "privacy:review", "Security review opened.", {
+    action: "SECURITY_REVIEW_OPENED",
+    review: securityReview,
+  });
   yield createLogEntry("error", "privacy:gate", "Transmission blocked.", {
     action: "PAYLOAD_BLOCKED",
-    decision,
     exceptionCode,
+    findings: findingSummaries(findings),
     receipt,
   });
   return;
 }
 
-if (decision === "sanitized") {
-  yield createLogEntry("tool_result", "privacy:redactor", "Tokens replaced.", {
-    action: "PAYLOAD_SANITIZED",
-    sourceText,
-    sanitizedText,
-  });
-}
-
 yield createLogEntry("success", "privacy:proxy", "Payload cleared.", {
   action: "PAYLOAD_CLEARED",
   decision,
+  sanitizedText,
+  findings: findingSummaries(findings),
   receipt,
 });
 `,
@@ -327,10 +326,11 @@ yield createLogEntry("success", "privacy:proxy", "Payload cleared.", {
 export const SAMPLE_SCENARIOS = {
   clean: { /* operational text, 0 flags */ },
   embedded_pii: { /* SSN, card, email, API key -> sanitize */ },
-  bulk_block: { /* many tokens -> block pre-transit */ },
+  bulk_block: { /* many tokens -> block + review case */ },
 } as const;
 
 export const BULK_FINDING_THRESHOLD = 8;
+export const MAX_PAYLOAD_CHARS = 4000;
 export const PLACEHOLDERS = {
   ssn: "[REDACTED_SSN]",
   credit_card: "[REDACTED_CC]",

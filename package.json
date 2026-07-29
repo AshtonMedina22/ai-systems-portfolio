@@ -17,6 +17,7 @@
     "test:workflow": "python -m pytest mcp-server/test_workflow_graph.py -v",
     "test:workflow-engine": "tsx --test tests/workflow-engine.test.ts",
     "test:privacy-engine": "tsx --test tests/privacy-engine.test.ts",
+    "test:privacy-sse": "tsx --test tests/privacy-sse.test.ts",
     "test:python": "python -m pytest mcp-server/test_mcp_tools.py mcp-server/test_migrate_pipeline.py mcp-server/test_workflow_graph.py -v",
     "test:payflow-sse": "tsx --test tests/payflow-sse.test.ts"
   },

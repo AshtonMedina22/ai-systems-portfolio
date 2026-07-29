@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   CompactEventLog,
   OpsConsoleShell,
@@ -10,9 +10,11 @@ import type { LogEntry } from "@/components/ui/TerminalStream";
 import { PRIVACY_SOURCE_FILES } from "@/lib/portfolio/source-excerpts";
 import {
   FINDING_LABELS,
+  PRIVACY_REVIEWER_ROLE,
   type FindingKind,
   type PrivacyReceipt,
   type ProxyDecision,
+  type SecurityReviewCase,
 } from "@/lib/privacy/types";
 import { EyeOff, FileText, ShieldAlert, ShieldCheck } from "lucide-react";
 
@@ -33,15 +35,15 @@ function derivePrivacyConsole(logs: LogEntry[]) {
   let decision: ProxyDecision | null = null;
   let findingCount = 0;
   let findings: FindingPreview[] = [];
-  let sourceText = "";
   let sanitizedText = "";
   let receipt: PrivacyReceipt | null = null;
   let exceptionCode: string | null = null;
+  let review: SecurityReviewCase | null = null;
+  let tooLarge = false;
 
   for (const log of logs) {
     const data = log.data ?? {};
     if (typeof data.findingCount === "number") findingCount = data.findingCount;
-    if (typeof data.sourceText === "string") sourceText = data.sourceText;
     if (typeof data.sanitizedText === "string") sanitizedText = data.sanitizedText;
     if (typeof data.exceptionCode === "string") exceptionCode = data.exceptionCode;
     if (typeof data.decision === "string") {
@@ -50,18 +52,40 @@ function derivePrivacyConsole(logs: LogEntry[]) {
     if (Array.isArray(data.findings)) {
       findings = data.findings as FindingPreview[];
     }
+    if (data.action === "PAYLOAD_TOO_LARGE") tooLarge = true;
+
+    const eventReview = recordValue(data.review);
+    if (eventReview) review = eventReview as unknown as SecurityReviewCase;
+
     const eventReceipt = recordValue(data.receipt);
-    if (eventReceipt) receipt = eventReceipt as unknown as PrivacyReceipt;
+    if (eventReceipt) {
+      receipt = eventReceipt as unknown as PrivacyReceipt;
+      if (receipt.securityReview) review = receipt.securityReview;
+    }
+
+    if (data.action === "SECURITY_REVIEW_ACKNOWLEDGED" && review) {
+      review = {
+        ...review,
+        status: "acknowledged",
+        acknowledgedAt:
+          typeof data.acknowledgedAt === "string"
+            ? data.acknowledgedAt
+            : new Date().toISOString(),
+        actor:
+          typeof data.actor === "string" ? data.actor : PRIVACY_REVIEWER_ROLE,
+      };
+    }
   }
 
   return {
     decision,
     findingCount,
     findings,
-    sourceText,
     sanitizedText,
     receipt,
     exceptionCode,
+    review,
+    tooLarge,
   };
 }
 
@@ -90,19 +114,37 @@ export function PrivacyOpsConsole({
   logs,
   isRunning,
   liveLabel,
+  inboundText,
   onClear,
+  onReleaseFalsePositive,
+  onAcknowledgeReview,
 }: {
   logs: LogEntry[];
   isRunning: boolean;
   liveLabel: string;
+  /** Client-owned inbound text for before/after - never taken from SSE. */
+  inboundText: string;
   onClear: () => void;
+  onReleaseFalsePositive?: (kind: FindingKind) => void;
+  onAcknowledgeReview?: () => void;
 }) {
   const state = useMemo(() => derivePrivacyConsole(logs), [logs]);
+  const [overrideReason, setOverrideReason] = useState(
+    "Support ticket needs contact email for callback - treat as false positive for this run."
+  );
   const idle = logs.length === 0 && !isRunning;
   const statusLabel = isRunning
     ? "Scanning"
     : decisionLabel(state.decision, idle);
   const statusTone = decisionTone(state.decision, isRunning, idle);
+  const uniqueKinds = [...new Set(state.findings.map((f) => f.kind))];
+  const showBeforeAfter =
+    Boolean(inboundText) &&
+    state.decision !== "blocked" &&
+    !state.tooLarge &&
+    (state.decision === "passed" ||
+      state.decision === "sanitized" ||
+      Boolean(state.sanitizedText));
 
   return (
     <DemoPanelTabs
@@ -122,9 +164,11 @@ export function PrivacyOpsConsole({
               className={`rounded-xl border px-3 py-2.5 ${
                 idle
                   ? "border-console-border bg-console-panel"
-                  : state.decision === "blocked"
+                  : state.decision === "blocked" || state.tooLarge
                     ? "border-danger/25 bg-danger-soft"
-                    : "border-ok/20 bg-ok-soft"
+                    : state.decision === "sanitized"
+                      ? "border-warn/25 bg-warn-soft"
+                      : "border-ok/20 bg-ok-soft"
               }`}
             >
               <div className="flex items-center gap-1.5">
@@ -136,7 +180,9 @@ export function PrivacyOpsConsole({
               <p className="mt-1 text-sm font-semibold text-opal-main">
                 {idle
                   ? "Waiting for payload"
-                  : `${state.findingCount} finding${state.findingCount === 1 ? "" : "s"}`}
+                  : state.tooLarge
+                    ? "Rejected - too large"
+                    : `${state.findingCount} finding${state.findingCount === 1 ? "" : "s"}`}
               </p>
             </div>
             <div
@@ -198,9 +244,20 @@ export function PrivacyOpsConsole({
           {idle ? (
             <div className="rounded-xl border border-console-border bg-console-panel px-3.5 py-4 text-center">
               <p className="text-sm text-opal-muted">
-                Pick a scenario and run the proxy. Clean payloads pass; embedded
-                PII is sanitized; bulk restricted payloads are blocked
-                pre-transit.
+                Pick a scenario or paste a custom payload. Clean payloads pass;
+                embedded PII is sanitized; bulk restricted payloads are blocked
+                and open a security review case.
+              </p>
+            </div>
+          ) : null}
+
+          {state.tooLarge ? (
+            <div className="rounded-xl border border-danger/30 bg-danger-soft p-4">
+              <p className="text-sm font-semibold text-opal-main">
+                Payload rejected
+              </p>
+              <p className="mt-1 text-sm text-opal-muted">
+                Inbound text exceeded the proxy size limit and was not scanned.
               </p>
             </div>
           ) : null}
@@ -212,37 +269,72 @@ export function PrivacyOpsConsole({
             >
               <div className="flex items-start gap-2.5">
                 <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-opal-main">
                     Transmission blocked
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-opal-muted">
-                    Finding count crossed the bulk threshold. The original
+                    Finding density crossed the bulk threshold. The original
                     payload was not forwarded. Exception{" "}
                     <span className="font-mono text-xs text-opal-main">
                       {state.exceptionCode ?? "PRIV-BULK-RESTRICTED"}
                     </span>
                     .
                   </p>
+                  {state.review ? (
+                    <div className="mt-3 rounded-lg border border-danger/20 bg-white px-3 py-2.5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-danger">
+                        Security review case
+                      </p>
+                      <dl className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                        <div>
+                          <dt className="text-[11px] text-opal-mist">Case</dt>
+                          <dd className="font-mono text-xs text-opal-main">
+                            {state.review.caseId}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-[11px] text-opal-mist">Status</dt>
+                          <dd className="font-mono text-xs text-opal-main">
+                            {state.review.status}
+                          </dd>
+                        </div>
+                      </dl>
+                      {state.review.status === "opened" &&
+                      onAcknowledgeReview ? (
+                        <button
+                          type="button"
+                          disabled={isRunning}
+                          onClick={onAcknowledgeReview}
+                          className="mt-3 inline-flex h-8 items-center rounded-lg bg-danger px-3 text-xs font-semibold text-white transition-colors hover:bg-danger/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger disabled:opacity-40"
+                        >
+                          Acknowledge review case
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
           ) : null}
 
-          {(state.sourceText || state.sanitizedText) &&
-          state.decision !== "blocked" ? (
+          {showBeforeAfter ? (
             <section
               className="console-panel p-4"
               aria-label="Before and after payload"
             >
               <p className="label-console">Before / after</p>
+              <p className="mt-1 text-xs text-opal-muted">
+                Inbound text stays client-side. The stream only returns
+                sanitized downstream text and finding metadata.
+              </p>
               <div className="mt-3 grid gap-3 lg:grid-cols-2">
                 <div>
                   <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-opal-mist">
-                    Inbound
+                    Inbound (client)
                   </p>
                   <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-console-border bg-white px-3 py-2.5 font-mono text-[11px] leading-relaxed text-opal-main">
-                    {state.sourceText || "(empty)"}
+                    {inboundText || "(empty)"}
                   </pre>
                 </div>
                 <div>
@@ -287,6 +379,47 @@ export function PrivacyOpsConsole({
             </section>
           ) : null}
 
+          {state.decision === "sanitized" &&
+          onReleaseFalsePositive &&
+          uniqueKinds.length > 0 ? (
+            <section
+              className="rounded-xl border border-warn/25 bg-warn-soft p-4"
+              aria-label="False positive release"
+            >
+              <p className="text-sm font-semibold text-opal-main">
+                Over-mask recovery
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-opal-muted">
+                If regex mangling blocked useful support text, release one
+                finding kind as a false positive and re-scan. Raw text still
+                never leaves the client in the event stream.
+              </p>
+              <label className="mt-3 block">
+                <span className="label-console">Override reason</span>
+                <textarea
+                  value={overrideReason}
+                  disabled={isRunning}
+                  onChange={(event) => setOverrideReason(event.target.value)}
+                  rows={2}
+                  className="mt-1.5 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-opal-main focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                />
+              </label>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {uniqueKinds.map((kind) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    disabled={isRunning || !overrideReason.trim()}
+                    onClick={() => onReleaseFalsePositive(kind)}
+                    className="inline-flex h-8 items-center rounded-lg border border-warn/30 bg-white px-3 text-xs font-semibold text-opal-main transition-colors hover:bg-warn-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warn disabled:opacity-40"
+                  >
+                    Release {FINDING_LABELS[kind]}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           {state.receipt ? (
             <section
               className={`rounded-xl border p-4 ${
@@ -327,6 +460,7 @@ export function PrivacyOpsConsole({
               <dl className="mt-3 grid gap-2 sm:grid-cols-2">
                 {[
                   ["Receipt", state.receipt.receiptId],
+                  ["Scenario", state.receipt.scenario],
                   ["Findings", String(state.receipt.findingCount)],
                   [
                     "Kinds",
@@ -335,13 +469,17 @@ export function PrivacyOpsConsole({
                       : "none",
                   ],
                   ["Exception", state.receipt.exceptionCode ?? "none"],
-                  ["Trail hash", state.receipt.trailHash],
                   [
-                    "At",
-                    new Date(state.receipt.at).toLocaleTimeString("en-US", {
-                      hour12: false,
-                    }),
+                    "Review case",
+                    state.receipt.securityReview?.caseId ?? "none",
                   ],
+                  [
+                    "Override",
+                    state.receipt.override
+                      ? state.receipt.override.suppressedKinds.join(", ")
+                      : "none",
+                  ],
+                  ["Trail hash", state.receipt.trailHash],
                 ].map(([label, value]) => (
                   <div
                     key={label}

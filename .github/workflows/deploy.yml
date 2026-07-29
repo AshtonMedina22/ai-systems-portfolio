@@ -61,6 +61,11 @@ jobs:
           PRIVACY_TEST_FAST: "1"
         run: npm run test:privacy-engine
 
+      - name: Privacy SSE tests
+        env:
+          PRIVACY_TEST_FAST: "1"
+        run: npm run test:privacy-sse
+
       - name: TypeScript check
         run: npm run typecheck
 

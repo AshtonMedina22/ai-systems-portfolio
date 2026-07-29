@@ -100,7 +100,8 @@ export function PrivacyArchitectureFlow() {
             Bulk restricted
           </p>
           <p className="mt-0.5 text-sm leading-snug text-opal-muted">
-            At {BULK_FINDING_THRESHOLD}+ findings, nothing is forwarded.
+            At {BULK_FINDING_THRESHOLD}+ findings, nothing is forwarded and a
+            security review case opens.
           </p>
         </div>
       </div>

@@ -1,17 +1,17 @@
 import { NextRequest } from "next/server";
 import { getPrivacyEngine } from "@/lib/privacy/adapter";
 import {
-  SAMPLE_SCENARIOS,
+  isFindingKind,
+  isPrivacyScenarioKey,
+  type FindingKind,
   type PrivacyScenarioKey,
 } from "@/lib/privacy/types";
 
 export const dynamic = "force-dynamic";
 
-function isScenarioKey(value: unknown): value is PrivacyScenarioKey {
-  return (
-    typeof value === "string" &&
-    Object.prototype.hasOwnProperty.call(SAMPLE_SCENARIOS, value)
-  );
+function parseSuppressKinds(value: unknown): FindingKind[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter(isFindingKind))];
 }
 
 export async function POST(req: NextRequest) {
@@ -20,8 +20,32 @@ export async function POST(req: NextRequest) {
     const scenarioKey = body.scenarioKey as unknown;
     const sourceText =
       typeof body.sourceText === "string" ? body.sourceText : undefined;
+    const suppressKinds = parseSuppressKinds(body.suppressKinds);
+    const overrideReason =
+      typeof body.overrideReason === "string" ? body.overrideReason : undefined;
+    const actor = typeof body.actor === "string" ? body.actor : undefined;
 
-    if (!isScenarioKey(scenarioKey) && !sourceText?.trim()) {
+    const hasScenario =
+      scenarioKey === undefined || isPrivacyScenarioKey(scenarioKey);
+    if (!hasScenario) {
+      return new Response(
+        JSON.stringify({ error: "Unknown scenario." }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const key = scenarioKey as PrivacyScenarioKey | undefined;
+    const needsText = key === "custom" || key === undefined;
+    if (needsText && !sourceText?.trim() && key === "custom") {
+      return new Response(
+        JSON.stringify({
+          error: "Custom payload requires sourceText.",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!key && !sourceText?.trim()) {
       return new Response(
         JSON.stringify({
           error: "Pick a scenario or provide sourceText.",
@@ -30,9 +54,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (scenarioKey && !isScenarioKey(scenarioKey)) {
+    if (suppressKinds.length > 0 && !overrideReason?.trim()) {
       return new Response(
-        JSON.stringify({ error: "Unknown scenario." }),
+        JSON.stringify({
+          error: "False-positive release requires an override reason.",
+        }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -42,8 +68,11 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         try {
           const logGenerator = getPrivacyEngine().run({
-            scenarioKey: isScenarioKey(scenarioKey) ? scenarioKey : undefined,
+            scenarioKey: key,
             sourceText,
+            suppressKinds,
+            overrideReason,
+            actor,
           });
 
           for await (const logEntry of logGenerator) {
