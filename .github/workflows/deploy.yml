@@ -46,6 +46,11 @@ jobs:
           PAYFLOW_TEST_FAST: "1"
         run: npm run test:payflow-sse
 
+      - name: Migration engine tests
+        env:
+          MIGRATE_TEST_FAST: "1"
+        run: npm run test:migrate-engine
+
       - name: TypeScript check
         run: npm run typecheck
 

@@ -16,7 +16,10 @@ import {
   SAMPLE_DATASETS,
   DEMO_TENANT_SCHEMA,
   type DatasetKey,
+  type MappingChoice,
+  type MappingTarget,
 } from "@/lib/migrate/types";
+import type { MappingPlaybook } from "@/lib/migrate/playbook";
 import { MIGRATE_FRAMING } from "@/lib/migrate/runtime";
 import { deriveMigrationKpis } from "@/lib/migrate/executive-summary";
 import type { BadgeTone } from "@/components/ui/Badge";
@@ -41,6 +44,12 @@ const PRESETS: Array<{
     detail: SAMPLE_DATASETS.corrupted.detail,
     tone: "danger",
   },
+  {
+    key: "reuse",
+    label: SAMPLE_DATASETS.reuse.label,
+    detail: SAMPLE_DATASETS.reuse.detail,
+    tone: "default",
+  },
 ];
 
 const STATUS_BADGE: Record<
@@ -53,11 +62,68 @@ const STATUS_BADGE: Record<
   blocked: "danger",
 };
 
+type RowFixMap = Record<string, Partial<Record<MappingTarget, string>>>;
+
+interface QuarantinePayload {
+  rowNumber: number;
+  reasons: string[];
+  normalized?: Record<string, string>;
+  remediableFields?: MappingTarget[];
+}
+
+function buildRemediationFixes(
+  logs: LogEntry[],
+  drafts: RowFixMap
+): RowFixMap {
+  const blocked = [...logs]
+    .reverse()
+    .find((log) => log.data?.action === "CUTOVER_BLOCKED");
+  const rows = Array.isArray(blocked?.data?.quarantinedRows)
+    ? (blocked?.data?.quarantinedRows as QuarantinePayload[])
+    : [];
+  const fixes: RowFixMap = { ...drafts };
+
+  for (const row of rows) {
+    const key = String(row.rowNumber);
+    const next = { ...(fixes[key] ?? {}) };
+    const fields =
+      row.remediableFields && row.remediableFields.length > 0
+        ? row.remediableFields
+        : (["user_email", "start_date"] as MappingTarget[]);
+
+    for (const field of fields) {
+      if (next[field]) continue;
+      if (field === "user_email") {
+        next.user_email = `user${row.rowNumber - 1}@northstar.example`;
+      } else if (field === "billing_email") {
+        next.billing_email = `billing${row.rowNumber - 1}@northstar.example`;
+      } else if (field === "start_date") {
+        next.start_date = "2026-08-01";
+      } else if (field === "status") {
+        next.status = "active";
+      } else if (field === "account_name") {
+        next.account_name =
+          row.normalized?.account_name || `Northstar Account ${row.rowNumber - 1}`;
+      } else if (field === "account_id") {
+        next.account_id =
+          row.normalized?.account_id || `LEGACY-${row.rowNumber - 1}`;
+      }
+    }
+    fixes[key] = next;
+  }
+
+  return fixes;
+}
+
 export default function MigratePage() {
   const [selected, setSelected] = useState<DatasetKey>("clean");
   const [csvText, setCsvText] = useState<string | null>(null);
   const [uploadName, setUploadName] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [mappingOverrides, setMappingOverrides] = useState<
+    Record<string, MappingChoice>
+  >({});
+  const [rowFixes, setRowFixes] = useState<RowFixMap>({});
   const [isRunning, setIsRunning] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -65,12 +131,20 @@ export default function MigratePage() {
   const kpis = useMemo(() => deriveMigrationKpis(logs), [logs]);
   const showImpact = logs.length > 0 || isRunning;
   const usingUpload = Boolean(csvText);
+  const mappingRequired = logs.some(
+    (log) => log.data?.action === "MAPPING_REQUIRED"
+  );
+  const cutoverBlocked = logs.some(
+    (log) => log.data?.action === "CUTOVER_BLOCKED"
+  );
 
   const handleSelect = (key: DatasetKey) => {
     setSelected(key);
     setCsvText(null);
     setUploadName(null);
     setLogs([]);
+    setMappingOverrides({});
+    setRowFixes({});
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -81,9 +155,43 @@ export default function MigratePage() {
     setCsvText(text);
     setUploadName(file.name);
     setLogs([]);
+    setMappingOverrides({});
+    setRowFixes({});
   };
 
-  const handleRun = async () => {
+  const handleMappingChange = (
+    sourceColumn: string,
+    target: MappingChoice | ""
+  ) => {
+    setMappingOverrides((current) => {
+      if (!target) {
+        const next = { ...current };
+        delete next[sourceColumn];
+        return next;
+      }
+      return { ...current, [sourceColumn]: target };
+    });
+  };
+
+  const handleApplyPlaybook = (playbook: MappingPlaybook) => {
+    setMappingOverrides(playbook.mappings);
+  };
+
+  const handleRowFixChange = (
+    rowNumber: number,
+    field: MappingTarget,
+    value: string
+  ) => {
+    setRowFixes((current) => ({
+      ...current,
+      [String(rowNumber)]: {
+        ...(current[String(rowNumber)] ?? {}),
+        [field]: value,
+      },
+    }));
+  };
+
+  const runPipeline = async (fixes: RowFixMap = rowFixes) => {
     setIsRunning(true);
     setLogs([]);
 
@@ -93,8 +201,17 @@ export default function MigratePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           usingUpload
-            ? { csvText, clientName: "Mid-West Logistics" }
-            : { datasetKey: selected }
+            ? {
+                csvText,
+                clientName: "Uploaded client",
+                mappingOverrides,
+                rowFixes: Object.keys(fixes).length > 0 ? fixes : undefined,
+              }
+            : {
+                datasetKey: selected,
+                mappingOverrides,
+                rowFixes: Object.keys(fixes).length > 0 ? fixes : undefined,
+              }
         ),
       });
 
@@ -143,21 +260,31 @@ export default function MigratePage() {
     }
   };
 
+  const handleRun = () => {
+    void runPipeline(rowFixes);
+  };
+
+  const handleRemediate = () => {
+    const fixes = buildRemediationFixes(logs, rowFixes);
+    setRowFixes(fixes);
+    void runPipeline(fixes);
+  };
+
   return (
     <main className="min-h-screen">
       <GlassBox
         title="Client Migration Pipeline"
         framing={MIGRATE_FRAMING}
         badge="Project 2"
-        purpose="Onboarding walkthrough that cleans messy client spreadsheets into an isolated client schema."
-        challenge="Messy client spreadsheets break schemas, delay go-live, and leave ops cleaning data by hand."
-        solution="A migration walkthrough that validates types, fixes formatting issues, simulates an isolated client schema, and reports success or hold."
-        impact="Turns messy client sheets into a controlled cutover path so onboarding does not stall on broken imports."
-        architecture="UI picks a dataset or CSV. /api/migrate runs an in-process TypeScript engine and streams steps over SSE. Config scaffolding exists for a live ETL path - not wired on this site."
+        purpose="Reusable onboarding pipeline for mapping, validating, and loading account data without cross-tenant writes."
+        challenge="Client exports arrive with different headers and formatting. Manual fixes slow onboarding, and partial imports can leave billing and user records out of sync."
+        solution="A reusable import template pauses on ambiguous columns, lets an operator map or leave them out, normalizes every row, checks account-billing-user dependencies, and rejects the full batch when blocking errors remain. Quarantined fields can be remediated and revalidated before commit."
+        impact="The operating model behind this demo supported 3,000+ customer onboardings and reduced implementation timelines by 30% through reusable mapping templates and playbooks."
+        architecture="Next.js sends a preset or uploaded CSV to /api/migrate. A TypeScript engine parses actual rows, applies operator mappings or a saved playbook, normalizes and validates related entities, then streams mapping, quarantine, remediation, receipt, and atomic commit evidence over SSE."
         tradeoffs={[
-          "Mockup runtime on Vercel - fast, free, honest demo. Not a full ETL against a real database.",
-          "Config scaffolding shows the production shape without pretending the site runs Pandas or Postgres.",
-          "Simulated tenant schema proves the isolation idea; a live cutover would need real DB credentials and batch controls.",
+          "The public demo performs real in-process parsing and validation but simulates the final database transaction.",
+          "Strict reusable templates require upfront mapping decisions; that work prevents repeated manual cleanup on every onboarding.",
+          "Production isolation would use tenant-scoped database credentials and a transaction around the full batch; the demo visualizes that boundary without claiming a live PostgreSQL write.",
         ]}
         stack="TypeScript, Next.js, SSE"
         isRunning={isRunning}
@@ -189,7 +316,10 @@ export default function MigratePage() {
               </div>
               <DetailList
                 rows={[
-                  { label: "Client", value: "Mid-West Logistics" },
+                  {
+                    label: "Client",
+                    value: usingUpload ? "Uploaded client" : dataset.clientName,
+                  },
                   {
                     label: "Rows",
                     value: usingUpload
@@ -276,8 +406,14 @@ export default function MigratePage() {
             ) : null}
 
             <DemoPrimaryButton
-              label="Run migration"
-              busyLabel="Running migration..."
+              label={
+                mappingRequired
+                  ? "Apply mapping and validate"
+                  : cutoverBlocked
+                    ? "Re-run after remediating"
+                    : "Analyze migration"
+              }
+              busyLabel="Running pipeline..."
               isRunning={isRunning}
               onClick={handleRun}
             />
@@ -288,7 +424,16 @@ export default function MigratePage() {
             logs={logs}
             isRunning={isRunning}
             liveLabel={MIGRATE_FRAMING}
-            onClear={() => setLogs([])}
+            mappingOverrides={mappingOverrides}
+            onMappingChange={handleMappingChange}
+            onApplyPlaybook={handleApplyPlaybook}
+            rowFixes={rowFixes}
+            onRowFixChange={handleRowFixChange}
+            onRemediate={cutoverBlocked ? handleRemediate : undefined}
+            onClear={() => {
+              setLogs([]);
+              setRowFixes({});
+            }}
           />
         }
       />

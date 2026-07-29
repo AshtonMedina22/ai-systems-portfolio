@@ -62,13 +62,19 @@ export function deriveMigrationKpis(logs: LogEntry[]): MigrationKpis {
 
     if (data.action === "CUTOVER_BLOCKED") {
       status = "blocked";
-      statusLabel = "Held for cleanup";
-      actionLabel = "Cutover paused - fix flagged rows first";
+      statusLabel = "Batch rejected";
+      actionLabel = "Zero rows committed - fix quarantined rows";
     }
 
-    if (data.status === "SANITIZED" && status === "pending") {
+    if (data.action === "MAPPING_REQUIRED" && status === "pending") {
       status = "warnings";
-      statusLabel = "Cleaning fields...";
+      statusLabel = "Mapping needed";
+      actionLabel = "Map or leave out ambiguous columns";
+    }
+
+    if (data.status === "ROWS_QUARANTINED" && status === "pending") {
+      status = "warnings";
+      statusLabel = "Validating rows...";
     }
   }
 
@@ -106,11 +112,20 @@ export function migrateResultBadgeForLog(log: LogEntry): {
   if (data.status === "SCHEMA_OK" || data.status === "PK_OK") {
     return { label: "Pass", tone: "ok" };
   }
-  if (data.status === "SCHEMA_ISSUES" || data.status === "SANITIZED") {
-    return { label: "Fixed", tone: "warn" };
+  if (data.status === "MAPPING_COMPLETE") {
+    return { label: "Mapped", tone: "ok" };
   }
-  if (data.status === "ZIP_NORMALIZED") {
-    return { label: "Normalized", tone: "warn" };
+  if (data.status === "MAPPING_REQUIRED") {
+    return { label: "Decision", tone: "warn" };
+  }
+  if (data.status === "ROWS_QUARANTINED") {
+    return { label: "Quarantined", tone: "warn" };
+  }
+  if (data.status === "VALIDATION_COMPLETE") {
+    return { label: "Validated", tone: "ok" };
+  }
+  if (data.status === "TENANT_BOUNDARY_VERIFIED") {
+    return { label: "Isolated", tone: "accent" };
   }
   if (log.level === "success") {
     return { label: "Done", tone: "ok" };

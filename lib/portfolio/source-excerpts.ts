@@ -88,24 +88,32 @@ export const MIGRATE_SOURCE_FILES: SourceFile[] = [
     code: `// lib/migrate/engine.ts
 export async function* runMigrationEngine(input = { datasetKey: "clean" }) {
   const profile = resolveProfile(input);
-  const tenantSchema = DEMO_TENANT_SCHEMA;
+  const analysis = analyzeMigration(profile, input.mappingOverrides);
 
-  yield createLogEntry("info", "pipeline:migrate",
-    \`Starting onboarding for \${profile.clientName}\`,
-    {
-      demoMode: "mockup",
-      stack: ["TypeScript", "Next.js", "SSE"],
-      rowCount: profile.rowCount,
+  if (analysis.unresolvedColumns.length > 0) {
+    yield mappingRequiredEvent(analysis);
+    return; // operator maps each column or chooses leave_out
+  }
+
+  yield normalizationEvidenceEvent(analysis.beforeAfter);
+  yield tenantBoundaryEvent({
+    target: DEMO_TENANT_SCHEMA,
+    neighborTenantWrites: 0,
+  });
+
+  if (analysis.quarantinedRows.length > 0) {
+    yield atomicRollbackEvent({
+      action: "CUTOVER_BLOCKED",
+      committedRows: 0,
+      quarantinedRows: analysis.quarantinedRows,
     });
+    return;
+  }
 
-  const { mapping, unmapped } = mapColumns(profile.sourceColumns);
-  // validate primary keys, sanitize zip/state/tax_id, then...
-
-  yield createLogEntry("tool_call", "tenant:schema",
-    \`Preparing isolated tenant space \${tenantSchema} (simulated)...\`,
-    { method: "simulate_tenant_schema", tenantSchema });
-
-  // Cutover complete or CUTOVER_BLOCKED based on remaining issues
+  yield atomicCommitEvent({
+    action: "CUTOVER_COMPLETE",
+    committedRows: analysis.validRows.length,
+  });
 }
 `,
   },
@@ -136,10 +144,10 @@ export const migrateProductionConfig = {
   databaseUrlEnv: "MIGRATE_DATABASE_URL",
   exampleDatabaseUrl: "postgres://migrate_user:SECRET@db.example:5432/saas_ops",
   tenantIsolation: "schema-per-tenant",
-  defaultTenantSchema: "tenant_id_992",
+  defaultTenantSchema: "tenant_northstar_042",
   etlEntrypoint: "mcp-server/migrate_pipeline.py",
   batchSize: 500,
-  targetTable: "locations",
+  targetTable: "accounts",
 } as const;
 `,
   },

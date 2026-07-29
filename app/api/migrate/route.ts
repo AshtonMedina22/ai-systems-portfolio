@@ -1,8 +1,36 @@
 import { NextRequest } from "next/server";
 import { getMigrationEngine } from "@/lib/migrate/adapter";
-import type { DatasetKey } from "@/lib/migrate/types";
+import {
+  TARGET_FIELDS,
+  type DatasetKey,
+  type MappingChoice,
+  type MappingTarget,
+} from "@/lib/migrate/types";
 
 export const dynamic = "force-dynamic";
+
+const DATASET_KEYS = new Set<DatasetKey>(["clean", "corrupted", "reuse"]);
+const TARGET_KEYS = new Set<string>(TARGET_FIELDS.map((field) => field.key));
+
+function parseRowFixes(
+  value: unknown
+): Record<string, Partial<Record<MappingTarget, string>>> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  const fixes: Record<string, Partial<Record<MappingTarget, string>>> = {};
+  for (const [rowKey, fields] of Object.entries(value)) {
+    if (!/^\d+$/.test(rowKey) || !fields || typeof fields !== "object") continue;
+    const next: Partial<Record<MappingTarget, string>> = {};
+    for (const [field, fieldValue] of Object.entries(fields)) {
+      if (TARGET_KEYS.has(field) && typeof fieldValue === "string") {
+        next[field as MappingTarget] = fieldValue;
+      }
+    }
+    if (Object.keys(next).length > 0) fixes[rowKey] = next;
+  }
+  return Object.keys(fixes).length > 0 ? fixes : undefined;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +40,23 @@ export async function POST(req: NextRequest) {
       typeof body.csvText === "string" ? body.csvText : undefined;
     const clientName =
       typeof body.clientName === "string" ? body.clientName : undefined;
+    const validMappingChoices = new Set<string>([
+      ...TARGET_FIELDS.map((field) => field.key),
+      "leave_out",
+    ]);
+    const mappingOverrides =
+      body.mappingOverrides &&
+      typeof body.mappingOverrides === "object" &&
+      !Array.isArray(body.mappingOverrides)
+        ? Object.fromEntries(
+            Object.entries(body.mappingOverrides).filter(
+              (entry): entry is [string, MappingChoice] =>
+                typeof entry[1] === "string" &&
+                validMappingChoices.has(entry[1])
+            )
+          )
+        : undefined;
+    const rowFixes = parseRowFixes(body.rowFixes);
 
     if (!datasetKey && !csvText) {
       return new Response(
@@ -20,7 +65,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (datasetKey && datasetKey !== "clean" && datasetKey !== "corrupted") {
+    if (datasetKey && !DATASET_KEYS.has(datasetKey)) {
       return new Response(
         JSON.stringify({ error: "Unknown dataset." }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -36,6 +81,8 @@ export async function POST(req: NextRequest) {
             datasetKey,
             csvText,
             clientName,
+            mappingOverrides,
+            rowFixes,
           });
 
           for await (const logEntry of logGenerator) {

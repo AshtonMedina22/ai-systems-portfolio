@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test:mcp": "python -m pytest mcp-server/test_mcp_tools.py -v",
     "test:migrate": "python -m pytest mcp-server/test_migrate_pipeline.py -v",
+    "test:migrate-engine": "tsx --test tests/migrate-engine.test.ts",
     "test:workflow": "python -m pytest mcp-server/test_workflow_graph.py -v",
     "test:python": "python -m pytest mcp-server/test_mcp_tools.py mcp-server/test_migrate_pipeline.py mcp-server/test_workflow_graph.py -v",
     "test:payflow-sse": "tsx --test tests/payflow-sse.test.ts"
