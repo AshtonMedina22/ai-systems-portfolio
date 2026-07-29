@@ -1,4 +1,19 @@
 import Link from "next/link";
+import {
+  ArrowRight,
+  Bot,
+  Building2,
+  Check,
+  ClipboardCheck,
+  Database,
+  DollarSign,
+  GitBranch,
+  Network,
+  Plug,
+  Quote,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { contactMailto, site } from "@/lib/site";
 import { PAYFLOW_FRAMING } from "@/lib/payflow/runtime";
 import { MIGRATE_FRAMING } from "@/lib/migrate/runtime";
@@ -8,7 +23,7 @@ import { PRIVACY_FRAMING } from "@/lib/privacy/runtime";
 const PROJECTS = [
   {
     title: "PayFlow",
-    mark: "PF",
+    icon: DollarSign,
     accent: "purple" as const,
     framing: PAYFLOW_FRAMING,
     summary: "Vendor and bank verification before an invoice can be paid.",
@@ -18,7 +33,7 @@ const PROJECTS = [
   },
   {
     title: "Client Migration Pipeline",
-    mark: "CM",
+    icon: Database,
     accent: "teal" as const,
     framing: MIGRATE_FRAMING,
     summary: "A controlled path from messy client files to isolated schemas.",
@@ -28,7 +43,7 @@ const PROJECTS = [
   },
   {
     title: "Workflow Governance & Control",
-    mark: "WG",
+    icon: GitBranch,
     accent: "shell" as const,
     framing: WORKFLOW_FRAMING,
     summary:
@@ -40,7 +55,7 @@ const PROJECTS = [
   },
   {
     title: "Data Privacy & Safety Suite",
-    mark: "DP",
+    icon: ShieldCheck,
     accent: "aqua" as const,
     framing: PRIVACY_FRAMING,
     summary:
@@ -54,26 +69,56 @@ const PROJECTS = [
 
 const DELIVER_AREAS = [
   {
+    stage: "Foundation",
+    icon: Building2,
+    iconClass: "bg-accent-soft text-accent-deep",
+    position: "lg:col-start-1 lg:row-start-1",
+    side: "left" as const,
     title: "End-to-End Enterprise Operations & ERP Platforms",
     body: "Unify CRM, sales, vendors, payroll, and accounting into one operating platform.",
   },
   {
+    stage: "Connection",
+    icon: Plug,
+    iconClass: "bg-ok-soft text-ok",
+    position: "lg:col-start-3 lg:row-start-1",
+    side: "right" as const,
     title: "Cross-Functional Systems Integration",
     body: "Connect SaaS tools and legacy data so teams work from one source of truth.",
   },
   {
+    stage: "Data",
+    icon: Database,
+    iconClass: "bg-opal-aqua/20 text-opal-teal",
+    position: "lg:col-start-1 lg:row-start-2",
+    side: "left" as const,
     title: "Data Migration & Multi-Tenant Architecture",
     body: "Move large customer datasets into isolated, scalable environments safely.",
   },
   {
+    stage: "Automation",
+    icon: Bot,
+    iconClass: "bg-danger-soft text-danger",
+    position: "lg:col-start-3 lg:row-start-2",
+    side: "right" as const,
     title: "Governed AI & Workflow Automation",
     body: "Automate routine work while keeping human approval at high-risk decisions.",
   },
   {
+    stage: "Enablement",
+    icon: ClipboardCheck,
+    iconClass: "bg-warn-soft text-warn",
+    position: "lg:col-start-1 lg:row-start-3",
+    side: "left" as const,
     title: "Operational Standardization & Enablement",
     body: "Create reusable SOPs and controls that keep multi-site operations consistent.",
   },
   {
+    stage: "Adoption",
+    icon: Users,
+    iconClass: "bg-opal-lilac text-opal-violet",
+    position: "lg:col-start-3 lg:row-start-3",
+    side: "right" as const,
     title: "Operator-Grade System Design",
     body: "Design around how people actually work, not how a process looks on paper.",
   },
@@ -81,22 +126,135 @@ const DELIVER_AREAS = [
 
 const accentStyles = {
   purple: {
-    mark: "bg-accent-soft text-accent-deep",
+    card: "border-t-accent",
+    mark: "bg-accent text-white",
     label: "text-accent",
+    preview:
+      "bg-gradient-to-br from-accent-soft via-white/75 to-opal-orchid/20",
+    cta: "text-accent-deep",
   },
   teal: {
-    mark: "bg-ok-soft text-ok",
+    card: "border-t-opal-teal",
+    mark: "bg-opal-teal text-white",
     label: "text-ok",
+    preview: "bg-gradient-to-br from-ok-soft via-white/75 to-opal-aqua/20",
+    cta: "text-ok",
   },
   shell: {
-    mark: "bg-danger-soft text-danger",
+    card: "border-t-opal-shell",
+    mark: "bg-opal-shell text-white",
     label: "text-danger",
+    preview:
+      "bg-gradient-to-br from-danger-soft via-white/75 to-opal-shell/20",
+    cta: "text-danger",
   },
   aqua: {
-    mark: "bg-ok-soft text-opal-aqua",
+    card: "border-t-opal-aqua",
+    mark: "bg-opal-aqua text-opal-main",
     label: "text-opal-aqua",
+    preview:
+      "bg-gradient-to-br from-opal-aqua/20 via-white/75 to-opal-lilac/45",
+    cta: "text-opal-teal",
   },
 } as const;
+
+type ProjectAccent = keyof typeof accentStyles;
+
+function ProjectPreview({ accent }: { accent: ProjectAccent }) {
+  if (accent === "purple") {
+    return (
+      <div
+        className="grid grid-cols-[1fr_auto_1fr] items-center gap-2"
+        aria-hidden
+      >
+        <div className="rounded-xl border border-white/80 bg-white/70 p-3 shadow-sm">
+          <p className="font-mono text-[9px] uppercase tracking-wider text-opal-muted">
+            Vendor
+          </p>
+          <p className="mt-1 text-xs font-semibold text-opal-main">
+            Identity matched
+          </p>
+        </div>
+        <ArrowRight className="h-4 w-4 text-accent" />
+        <div className="rounded-xl border border-accent/20 bg-white/80 p-3 shadow-sm">
+          <p className="font-mono text-[9px] uppercase tracking-wider text-opal-muted">
+            Payment
+          </p>
+          <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-accent-deep">
+            <Check className="h-3 w-3" />
+            Cleared
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (accent === "teal") {
+    return (
+      <div className="flex items-center gap-2" aria-hidden>
+        {["Raw files", "Validate", "Tenant DB"].map((step, index) => (
+          <div key={step} className="contents">
+            <div className="min-w-0 flex-1 rounded-xl border border-white/80 bg-white/75 px-2 py-3 text-center shadow-sm">
+              <span className="block font-mono text-[9px] text-opal-muted">
+                0{index + 1}
+              </span>
+              <span className="mt-1 block truncate text-[11px] font-semibold text-opal-main">
+                {step}
+              </span>
+            </div>
+            {index < 2 ? (
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-opal-teal" />
+            ) : null}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (accent === "shell") {
+    return (
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2" aria-hidden>
+        <div className="rounded-xl border border-white/80 bg-white/75 p-3 shadow-sm">
+          <p className="font-mono text-[9px] uppercase tracking-wider text-opal-muted">
+            Policy check
+          </p>
+          <p className="mt-1 text-xs font-semibold text-opal-main">
+            Amount over $10K
+          </p>
+        </div>
+        <GitBranch className="h-4 w-4 text-opal-shell" />
+        <div className="rounded-xl border border-opal-shell/20 bg-white/80 p-3 shadow-sm">
+          <p className="font-mono text-[9px] uppercase tracking-wider text-opal-muted">
+            Decision
+          </p>
+          <p className="mt-1 text-xs font-semibold text-danger">
+            Manager review
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-white/80 bg-white/75 p-3 shadow-sm" aria-hidden>
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-mono text-[9px] uppercase tracking-wider text-opal-muted">
+          Outbound payload
+        </p>
+        <span className="rounded-full bg-ok-soft px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ok">
+          Protected
+        </span>
+      </div>
+      <div className="mt-2 flex items-center gap-2 font-mono text-[11px] text-opal-main">
+        <span>SSN</span>
+        <span className="rounded bg-opal-terminal px-2 py-0.5 text-white">
+          ***-**-6789
+        </span>
+        <span className="text-opal-teal">PII masked</span>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   return (
@@ -108,11 +266,12 @@ export default function HomePage() {
               {site.name} - {site.role}
             </p>
             <h1 className="mt-3 max-w-3xl font-display text-[34px] font-semibold leading-[1.08] tracking-[-0.035em] text-opal-main sm:mt-4 sm:text-5xl">
-              Systems that make complex operations feel simple.
+              Turning operational complexity into scalable systems.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-opal-muted sm:mt-5 sm:text-[17px]">
-              I architect ERP platforms, integrations, and governed automation
-              that replace fragmented tools with systems people can trust.
+              I design ERP platforms, AI workflows, and business systems that
+              replace disconnected processes with scalable, reliable, &amp;
+              automated solutions.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-6">
               <a href="#projects" className="btn-primary">
@@ -133,23 +292,23 @@ export default function HomePage() {
                 10 years
               </dt>
               <dd className="mt-0.5 text-xs leading-snug text-opal-muted sm:text-sm">
-                building from operational reality
+                operations leadership and systems delivery
               </dd>
             </div>
             <div className="px-3 lg:px-0 lg:py-3">
               <dt className="font-display text-xl font-semibold text-opal-main">
-                4 demos
+                4 interactive systems
               </dt>
               <dd className="mt-0.5 text-xs leading-snug text-opal-muted sm:text-sm">
-                showing systems, not slides
+                working proof across finance, data, and automation
               </dd>
             </div>
             <div className="px-3 pr-0 lg:px-0 lg:py-3 lg:last:pb-0">
               <dt className="font-display text-xl font-semibold text-opal-main">
-                Human-led
+                Risk-gated
               </dt>
               <dd className="mt-0.5 text-xs leading-snug text-opal-muted sm:text-sm">
-                controls where risk matters
+                human approval and audit trails by design
               </dd>
             </div>
           </dl>
@@ -158,68 +317,77 @@ export default function HomePage() {
 
       <section
         id="projects"
-        className="mx-auto max-w-6xl scroll-mt-24 px-5 pb-16 pt-4 sm:px-6 lg:px-8"
+        className="mx-auto max-w-6xl scroll-mt-24 px-5 pb-20 pt-8 sm:px-6 sm:pb-24 lg:px-8"
       >
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="label-opal">Selected work</p>
             <h2 className="mt-1.5 font-display text-2xl font-semibold tracking-tight text-opal-main">
-              Systems you can explore
+              Built for the way operations actually work
             </h2>
           </div>
           <p className="hidden max-w-md text-sm text-opal-muted sm:block">
-            Four compact case studies with working demos and source.
+            Four interactive case studies showing how I reduce manual work,
+            manage exceptions, and keep critical decisions under control.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 md:grid-cols-2">
           {PROJECTS.map((project) => {
             const styles = accentStyles[project.accent];
+            const Icon = project.icon;
             return (
               <article
                 key={project.demoHref}
-                className="card-opal card-opal-interactive flex min-h-[285px] flex-col p-5"
+                className={`card-opal card-opal-interactive flex min-h-[420px] flex-col overflow-hidden border-t-4 ${styles.card}`}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span
-                    className={`inline-flex h-8 w-8 items-center justify-center rounded-lg font-mono text-[11px] font-semibold ${styles.mark}`}
-                    aria-hidden
-                  >
-                    {project.mark}
-                  </span>
-                  <p
-                    className={`text-[11px] font-semibold uppercase tracking-[0.06em] ${styles.label}`}
-                  >
-                    {project.framing}
-                  </p>
+                <div className={`border-b border-line p-5 ${styles.preview}`}>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <span
+                      className={`inline-flex h-10 w-10 items-center justify-center rounded-xl shadow-sm ${styles.mark}`}
+                      aria-hidden
+                    >
+                      <Icon className="h-5 w-5" strokeWidth={1.8} />
+                    </span>
+                    <p
+                      className={`text-[11px] font-semibold uppercase tracking-[0.06em] ${styles.label}`}
+                    >
+                      {project.framing}
+                    </p>
+                  </div>
+                  <ProjectPreview accent={project.accent} />
                 </div>
 
-                <h3 className="mt-5 font-display text-xl font-semibold tracking-tight text-opal-main">
-                  {project.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-opal-muted">
-                  {project.summary}
-                </p>
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="font-display text-xl font-semibold tracking-tight text-opal-main">
+                    {project.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-opal-muted">
+                    {project.summary}
+                  </p>
 
-                <div className="mt-4 border-t border-line pt-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-opal-label">
-                    Outcome
-                  </p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-opal-main">
-                    {project.outcome}
-                  </p>
-                </div>
+                  <div className="mt-4 border-t border-line pt-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-opal-label">
+                      Outcome
+                    </p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-opal-main">
+                      {project.outcome}
+                    </p>
+                  </div>
 
-                <div className="mt-auto pt-5">
-                  <p className="mb-3 text-xs text-opal-muted">
-                    {project.tech.join(", ")}
-                  </p>
-                  <div className="flex items-center gap-4">
+                  <div className="mt-auto flex items-end justify-between gap-4 pt-5">
+                    <p className="text-xs text-opal-muted">
+                      {project.tech.join(", ")}
+                    </p>
                     <Link
                       href={project.demoHref}
-                      className="inline-flex h-9 items-center rounded-xl bg-accent px-3.5 text-sm font-semibold text-white transition-colors hover:bg-accent-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                      className={`group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${styles.cta}`}
                     >
-                      View demo
+                      Explore
+                      <ArrowRight
+                        className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                        aria-hidden
+                      />
                     </Link>
                   </div>
                 </div>
@@ -231,45 +399,111 @@ export default function HomePage() {
 
       <section
         aria-label="Operator perspective"
-        className="mx-auto max-w-6xl px-5 pb-14 sm:px-6 lg:px-8"
+        className="relative isolate overflow-hidden bg-opal-terminal text-white"
       >
-        <div className="grid gap-3 border-y border-line py-6 sm:grid-cols-[180px_1fr] sm:items-start">
-          <p className="label-opal">Operator perspective</p>
-          <p className="max-w-3xl text-[15px] leading-relaxed text-opal-muted">
-            Before I architected systems, I ran one - accountable for the people,
-            compliance, and numbers, not just the software. I build for the
-            people who have to use the system when the day gets messy.
-          </p>
+        <div
+          className="absolute -left-20 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-opal-orchid/20 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="absolute -right-16 top-0 h-64 w-64 rounded-full bg-opal-aqua/15 blur-3xl"
+          aria-hidden
+        />
+        <div className="relative mx-auto grid max-w-6xl gap-8 px-5 py-14 sm:grid-cols-[0.4fr_1.6fr] sm:px-6 sm:py-20 lg:px-8">
+          <div>
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-opal-aqua">
+              <Quote className="h-5 w-5" fill="currentColor" aria-hidden />
+            </span>
+            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.1em] text-white/55">
+              Operator perspective
+            </p>
+          </div>
+          <blockquote className="max-w-4xl">
+            <p className="font-display text-2xl font-medium leading-snug tracking-[-0.02em] text-white sm:text-3xl sm:leading-snug lg:text-[34px]">
+              I spent years running operations before I designed systems. That
+              experience shapes every workflow, automation, and platform I
+              build.
+            </p>
+            <footer className="mt-6 flex items-center gap-3 text-sm text-white/60">
+              <span className="h-px w-10 bg-opal-aqua" aria-hidden />
+              Systems shaped by operational reality
+            </footer>
+          </blockquote>
         </div>
       </section>
 
       <section
         id="where-i-deliver"
-        className="mx-auto max-w-6xl scroll-mt-24 px-5 pb-20 sm:px-6 lg:px-8"
+        className="mx-auto max-w-6xl scroll-mt-24 px-5 pb-24 pt-16 sm:px-6 sm:pt-20 lg:px-8"
       >
         <div className="mb-6">
           <p className="label-opal">Capabilities</p>
           <h2 className="mt-1.5 font-display text-2xl font-semibold tracking-tight text-opal-main">
-            Where I deliver
+            What I Build
           </h2>
         </div>
 
-        <div className="grid border-t border-line sm:grid-cols-2">
-          {DELIVER_AREAS.map((area, index) => (
+        <div className="relative grid gap-4 border-l border-line-strong pl-5 lg:grid-cols-[1fr_170px_1fr] lg:grid-rows-3 lg:gap-x-8 lg:gap-y-5 lg:border-l-0 lg:pl-0">
+          <div className="relative hidden items-center justify-center lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:flex">
+            <div
+              className="absolute bottom-3 left-1/2 top-3 w-px -translate-x-1/2 bg-gradient-to-b from-accent via-opal-teal to-opal-shell"
+              aria-hidden
+            />
+            <div className="relative z-10 w-full rounded-2xl border border-white/90 bg-white/80 px-4 py-5 text-center shadow-opal-soft backdrop-blur-xl">
+              <span className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-xl bg-opal-terminal text-white">
+                <Network className="h-5 w-5" aria-hidden />
+              </span>
+              <p className="mt-3 font-display text-sm font-semibold text-opal-main">
+                Operational core
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-opal-muted">
+                People, process, controls, and data
+              </p>
+            </div>
+          </div>
+
+          {DELIVER_AREAS.map((area) => {
+            const Icon = area.icon;
+            const connectorClass =
+              area.side === "left"
+                ? "lg:after:absolute lg:after:left-full lg:after:top-1/2 lg:after:h-px lg:after:w-8 lg:after:bg-line-strong"
+                : "lg:before:absolute lg:before:right-full lg:before:top-1/2 lg:before:h-px lg:before:w-8 lg:before:bg-line-strong";
+
+            return (
             <article
               key={area.title}
-              className={`border-b border-line py-5 sm:px-5 ${
-                index % 2 === 0 ? "sm:border-r sm:pl-0" : "sm:pr-0"
-              }`}
+              className={`relative rounded-2xl border border-white/80 bg-white/50 p-5 shadow-opal-soft backdrop-blur-lg ${area.position} ${connectorClass}`}
             >
-              <h3 className="font-display text-base font-semibold text-opal-main">
-                {area.title}
-              </h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-opal-muted">
-                {area.body}
-              </p>
+              <span
+                className="absolute -left-[27px] top-7 h-3 w-3 rounded-full border-2 border-opal-canvas bg-accent lg:hidden"
+                aria-hidden
+              />
+              <div
+                className={`flex items-start gap-4 ${
+                  area.side === "left" ? "lg:flex-row-reverse lg:text-right" : ""
+                }`}
+              >
+                <span
+                  className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${area.iconClass}`}
+                  aria-hidden
+                >
+                  <Icon className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-opal-label">
+                    {area.stage}
+                  </p>
+                  <h3 className="mt-1 font-display text-base font-semibold text-opal-main">
+                    {area.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-opal-muted">
+                    {area.body}
+                  </p>
+                </div>
+              </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
     </main>
