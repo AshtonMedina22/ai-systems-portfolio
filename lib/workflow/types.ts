@@ -11,6 +11,12 @@ export type WorkflowNodeId =
 
 export type WorkflowDecision = "approve" | "reject";
 
+export type HoldStatus =
+  | "none"
+  | "reserved"
+  | "released_to_execute"
+  | "rolled_back";
+
 /** Reviewer role shown in the public demo UI and session audit trail. */
 export const WORKFLOW_REVIEWER_ROLE = "operations manager" as const;
 
@@ -33,6 +39,27 @@ export interface WorkflowAuditEntry {
   actor?: string;
   decision?: WorkflowDecision;
   reason?: string;
+  receiptId?: string;
+  prevHash?: string;
+  hash?: string;
+  policyId?: string;
+}
+
+/** Hash-chained session receipt for the current demo run. Not a durable WORM store. */
+export interface GovernanceReceipt {
+  receiptId: string;
+  sessionId: string;
+  requestId: string;
+  transaction: "committed" | "rolled_back" | "paused";
+  actor?: string;
+  decidedAt?: string;
+  decision?: WorkflowDecision;
+  amount: number | null;
+  policyId: string;
+  holdId: string | null;
+  holdStatus: HoldStatus;
+  trailHash: string;
+  auditTrail: WorkflowAuditEntry[];
 }
 
 /** Payouts above this amount pause for operations manager sign-off. */

@@ -6,16 +6,16 @@ export function WorkflowArchitectureFlow() {
   return (
     <figure
       className="mt-4"
-      aria-label={`Workflow architecture: Intake to compliance to threshold decision. At or below $${FINANCIAL_THRESHOLD_USD.toLocaleString()} continues to final execution. Above threshold pauses for operations manager approve to resume or reject to stop. Public page uses a TypeScript state machine with in-memory checkpoint.`}
+      aria-label={`Workflow governance architecture: Intake to policy permissions to threshold decision. At or below $${FINANCIAL_THRESHOLD_USD.toLocaleString()} continues to final execution. Above threshold places an authorization hold, pauses for operations manager intervention, then approve to execute or reject to roll back the hold. Public page uses a TypeScript state machine with in-memory checkpoint and hash-chained session receipt.`}
     >
       <ol className="m-0 flex list-none flex-col gap-2 p-0 sm:flex-row sm:flex-wrap sm:items-stretch sm:gap-0">
         {[
           { id: "intake", n: "01", label: "Intake", detail: "Request packet" },
           {
-            id: "compliance",
+            id: "policy",
             n: "02",
-            label: "Compliance",
-            detail: "Policy and required fields",
+            label: "Policy",
+            detail: "Permissions before action",
           },
           {
             id: "threshold",
@@ -70,10 +70,10 @@ export function WorkflowArchitectureFlow() {
             At or below threshold
           </p>
           <p className="mt-1 text-sm font-semibold text-opal-main">
-            Final execution
+            Final execution + audit receipt
           </p>
           <p className="mt-0.5 text-sm leading-snug text-opal-muted">
-            Routine path continues without an operations manager pause.
+            Routine path continues under policy without an intervention pause.
           </p>
         </div>
         <div className="rounded-xl border border-warn/20 bg-warn-soft px-3.5 py-3">
@@ -81,28 +81,30 @@ export function WorkflowArchitectureFlow() {
             Above threshold
           </p>
           <p className="mt-1 text-sm font-semibold text-opal-main">
-            Pause - operations manager
+            Hold - operations manager intervention
           </p>
           <p className="mt-0.5 text-sm leading-snug text-opal-muted">
-            Approve resumes to final execution. Reject stops downstream steps.
+            Approve releases the hold to execute. Reject rolls the hold back and
+            records a rolled-back receipt.
           </p>
         </div>
       </div>
 
       <p className="mt-3 text-sm leading-snug text-opal-muted">
-        Public runtime: TypeScript state machine with an in-memory checkpoint.
-        LangGraph and Postgres checkpoint config in the repo is reference only
-        for this hosted demo.
+        Public runtime: TypeScript state machine with an in-memory checkpoint
+        and hash-chained session receipt. LangGraph and Postgres checkpoint
+        config in the repo is reference only for this hosted demo.
       </p>
 
       <figcaption className="sr-only">
         Browser starts a scenario on a Next.js SSE route. A TypeScript state
-        machine runs intake, compliance, and a financial threshold decision. At
-        or below the threshold, final execution continues. Above the threshold,
-        the run pauses for operations manager approval to resume or reject to
-        stop. Audit events are a session trail in memory, not an immutable
-        store. LangGraph with Postgres checkpointing is config and reference
-        only, not the public runtime.
+        machine runs intake, policy permissions, and a financial threshold
+        decision. At or below the threshold, final execution continues. Above
+        the threshold, an authorization hold is reserved and the run pauses for
+        operations manager intervention. Approve resumes to execute; reject
+        rolls the hold back. A hash-chained session receipt records who decided,
+        when, on what amount, and under which policy. LangGraph with Postgres
+        checkpointing is config and reference only, not the public runtime.
       </figcaption>
     </figure>
   );

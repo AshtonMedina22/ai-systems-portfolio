@@ -51,6 +51,11 @@ jobs:
           MIGRATE_TEST_FAST: "1"
         run: npm run test:migrate-engine
 
+      - name: Workflow engine tests
+        env:
+          WORKFLOW_TEST_FAST: "1"
+        run: npm run test:workflow-engine
+
       - name: TypeScript check
         run: npm run typecheck
 

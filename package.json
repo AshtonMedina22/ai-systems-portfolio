@@ -2,7 +2,7 @@
   "name": "ai-systems-portfolio",
   "version": "1.0.0",
   "private": true,
-  "description": "Ashton Medina portfolio: live PayFlow FastMCP demo; TypeScript mockups for client migration and workflow approvals.",
+  "description": "Ashton Medina portfolio: live PayFlow FastMCP demo; TypeScript mockups for client migration and workflow governance.",
   "scripts": {
     "dev": "next dev",
     "dev:mcp": "python mcp-server/payflow_server.py",
@@ -15,6 +15,7 @@
     "test:migrate": "python -m pytest mcp-server/test_migrate_pipeline.py -v",
     "test:migrate-engine": "tsx --test tests/migrate-engine.test.ts",
     "test:workflow": "python -m pytest mcp-server/test_workflow_graph.py -v",
+    "test:workflow-engine": "tsx --test tests/workflow-engine.test.ts",
     "test:python": "python -m pytest mcp-server/test_mcp_tools.py mcp-server/test_migrate_pipeline.py mcp-server/test_workflow_graph.py -v",
     "test:payflow-sse": "tsx --test tests/payflow-sse.test.ts"
   },

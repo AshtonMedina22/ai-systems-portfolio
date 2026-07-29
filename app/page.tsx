@@ -28,12 +28,14 @@ const PROJECTS = [
     codeHref: `${site.githubRepo}/blob/main/lib/migrate/engine.ts`,
   },
   {
-    title: "Workflow & Approvals",
-    mark: "WA",
+    title: "Workflow Governance & Control",
+    mark: "WG",
     accent: "shell" as const,
     framing: WORKFLOW_FRAMING,
-    summary: "Automated workflows with explicit checkpoints for risky spend.",
-    outcome: "Routine work continues; requests over $10,000 wait for approval.",
+    summary:
+      "Policy before action, human intervention on high-value steps, and a hash-chained audit receipt after.",
+    outcome:
+      "Routine work continues under policy; over $10,000 holds for manager decision or rollback.",
     tech: ["TypeScript", "Next.js", "SSE"],
     demoHref: "/workflow",
     codeHref: `${site.githubRepo}/blob/main/lib/workflow/state-machine.ts`,

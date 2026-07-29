@@ -160,114 +160,56 @@ export const WORKFLOW_SOURCE_FILES: SourceFile[] = [
     language: "typescript",
     kind: "runtime",
     code: `// lib/workflow/state-machine.ts
-// Public runtime: TypeScript state machine with in-memory checkpoint.
+// Public runtime: policy check, authorization hold, intervention, hash-chained receipt.
 
-// --- Intake ---
-yield nodeTransition(
-  "intake",
-  "intake",
-  \`Intake recorded for \${request.subject} at \${request.site}.\`,
-  trail
-);
-
-// --- Compliance Check ---
-yield nodeTransition(
-  "intake",
-  "compliance_check",
-  "Compliance check started - confirming site policy and required fields.",
-  trail
-);
-
-// --- Financial Threshold ---
-yield nodeTransition(
-  "compliance_check",
-  "financial_threshold",
-  \`Checking financial threshold (pause if amount > $\${FINANCIAL_THRESHOLD_USD.toLocaleString()}).\`,
-  trail
-);
-
-const amount = request.amount;
-const overThreshold =
-  typeof amount === "number" && amount > FINANCIAL_THRESHOLD_USD;
+yield createLogEntry("tool_result", "node:compliance_check", "Policy check passed.", {
+  action: "POLICY_OK",
+  policyId: policy.policyId,
+  checks: policy.checks,
+  actorRoleRequired: WORKFLOW_REVIEWER_ROLE,
+  layer: "permissions",
+});
 
 if (overThreshold) {
-  yield createLogEntry(
-    "warning",
-    "node:awaiting_approval",
-    \`Workflow paused. \${WORKFLOW_REVIEWER_ROLE} sign-off needed before the $\${amount!.toLocaleString()} payout can run.\`,
-    {
-      action: "AWAITING_APPROVAL",
-      sessionId: id,
-      amount,
-      threshold: FINANCIAL_THRESHOLD_USD,
-      overThreshold: true,
-      checkpoint: true,
-      node: "awaiting_approval",
-      reviewerRole: WORKFLOW_REVIEWER_ROLE,
-      auditTrail: [...trail],
-    }
-  );
+  yield createLogEntry("tool_result", "node:financial_threshold", "Authorization hold placed.", {
+    action: "HOLD_PLACED",
+    holdId,
+    amount,
+    status: "reserved",
+  });
+
+  yield createLogEntry("warning", "node:awaiting_approval", "Intervention gate open.", {
+    action: "AWAITING_APPROVAL",
+    sessionId: id,
+    amount,
+    holdId,
+    policyId: policy.policyId,
+    layer: "intervention",
+    auditTrail: [...trail],
+  });
 
   const decisionResult = await waitForDecision(session);
   if (decisionResult.decision === "reject") {
-    markSessionRejected(session);
-    const rejectDetail = decisionResult.reason
-      ? \`\${WORKFLOW_REVIEWER_ROLE} rejected the payout. Reason: \${decisionResult.reason}\`
-      : \`\${WORKFLOW_REVIEWER_ROLE} rejected the payout. Workflow stopped.\`;
-    audit(trail, "rejected", rejectDetail, {
-      actor: decisionResult.actor,
-      decision: "reject",
-      reason: decisionResult.reason,
+    yield createLogEntry("warning", "workflow:rollback", "Released authorization hold.", {
+      action: "ROLLED_BACK",
+      holdId,
+      compensation: "release_authorization_hold",
     });
-    yield createLogEntry(
-      "error",
-      "workflow:checkpoint",
-      \`\${WORKFLOW_REVIEWER_ROLE} rejected \${request.requestId}. Downstream steps did not run.\`,
-      {
-        action: "REJECTED",
-        sessionId: id,
-        node: "rejected",
-        actor: decisionResult.actor,
-        decidedAt: decisionResult.at,
-        reason: decisionResult.reason,
-        auditTrail: [...trail],
-      }
-    );
+    yield createLogEntry("error", "workflow:checkpoint", "Rejected; hold rolled back.", {
+      action: "REJECTED",
+      actor: decisionResult.actor,
+      receipt: buildReceipt({ transaction: "rolled_back", ... }),
+    });
     return;
   }
 
-  audit(
-    trail,
-    "financial_threshold",
-    \`\${WORKFLOW_REVIEWER_ROLE} approved. Resuming toward final execution.\`,
-    {
-      actor: decisionResult.actor,
-      decision: "approve",
-    }
-  );
-
-  yield createLogEntry(
-    "success",
-    "workflow:checkpoint",
-    \`\${WORKFLOW_REVIEWER_ROLE} approved. Resuming from checkpoint toward final execution.\`,
-    {
-      action: "APPROVED",
-      sessionId: id,
-      node: "financial_threshold",
-      actor: decisionResult.actor,
-      decidedAt: decisionResult.at,
-      auditTrail: [...trail],
-    }
-  );
+  yield createLogEntry("success", "workflow:checkpoint", "Approved; hold released to execute.", {
+    action: "APPROVED",
+    actor: decisionResult.actor,
+  });
 }
 
-// --- Final Execution ---
-yield nodeTransition(
-  overThreshold ? "awaiting_approval" : "financial_threshold",
-  "final_execution",
-  "Final execution node started.",
-  trail
-);
+// Pre-execution policy re-check, then final execution + COMPLETED receipt
 `,
   },
   {

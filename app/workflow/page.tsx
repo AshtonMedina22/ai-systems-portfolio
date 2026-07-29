@@ -209,35 +209,36 @@ export default function WorkflowPage() {
   return (
     <main className="min-h-screen">
       <GlassBox
-        title="Workflow & Approvals"
+        title="Workflow Governance & Control"
         framing={WORKFLOW_FRAMING}
         badge="Project 3"
-        purpose="Process runner with an operations manager checkpoint above financial thresholds."
-        valueLine="Routine paths continue. Requests over $10,000 pause for operations manager approval; reject stops downstream execution."
-        controlStatement={`Nothing above $${FINANCIAL_THRESHOLD_USD.toLocaleString()} continues without an explicit operations manager Approve or Reject on the paused checkpoint.`}
-        challenge="Multi-site requests stall in email, and high-value steps can move without a clear operations manager sign-off."
-        solution={`A step runner that handles routine work, then pauses above $${FINANCIAL_THRESHOLD_USD.toLocaleString()} until an operations manager approves or rejects.`}
-        impact="Routine work proceeds; high-risk spend stops for an explicit operations manager decision instead of dying in email."
+        purpose="Three-layer governance for automated work: policy permissions before action, human intervention during high-value steps, and a hash-chained audit receipt after."
+        valueLine="Routine paths continue under policy. Requests over $10,000 place an authorization hold, pause for operations manager intervention, and either execute or roll the hold back."
+        controlStatement={`Nothing above $${FINANCIAL_THRESHOLD_USD.toLocaleString()} executes without an explicit operations manager Approve or Reject. Reject releases the authorization hold and records a rolled-back receipt.`}
+        challenge="Teams often collapse permissions, live intervention, and audit into one layer - so high-value automation can move without a clear stop, and logs only explain harm after it happens."
+        solution={`A governed step runner that checks policy before action, pauses above $${FINANCIAL_THRESHOLD_USD.toLocaleString()} for operations manager intervention, and emits a hash-chained session receipt for who decided, when, on what amount, and under which policy.`}
+        impact="Routine work proceeds under policy bounds; high-risk spend cannot complete without an explicit human decision, and reject rolls back the reserved authorization hold instead of leaving a dangling intent."
         whenWrong={
           <div className="rounded-xl border border-line bg-console-panel px-4 py-4 sm:px-5 sm:py-5">
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <dt className="text-sm font-semibold text-opal-main">
-                  Over-threshold path
+                  Policy before action
                 </dt>
                 <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
-                  Amounts above $
-                  {FINANCIAL_THRESHOLD_USD.toLocaleString()} freeze at the
-                  threshold gate. Final execution does not run until Approve.
+                  Permissions and spend bounds are evaluated before the run
+                  attempts final execution - not only after a pause.
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-semibold text-opal-main">
-                  Reject stops the run
+                  Reject rolls back the hold
                 </dt>
                 <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
-                  Reject ends the session. Downstream steps do not execute.
-                  This demo does not roll back external side effects.
+                  Over-threshold runs reserve an authorization hold. Reject
+                  releases that hold (compensating rollback) and blocks
+                  downstream execution. This is an in-process demo hold, not a
+                  live ledger undo.
                 </dd>
               </div>
               <div>
@@ -245,28 +246,29 @@ export default function WorkflowPage() {
                   Who reviews
                 </dt>
                 <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
-                  Operations manager reviews in the ops console, with actor,
-                  timestamp, and optional reject reason on the session audit
-                  trail.
+                  Operations manager decides in the governance console, with
+                  actor, timestamp, optional reject reason, policy id, and hold
+                  status on the session receipt.
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-semibold text-opal-main">
-                  Audit trail limit
+                  Audit receipt limit
                 </dt>
                 <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
-                  Events are an in-memory demo trail for the current run - not
-                  an immutable or durable store.
+                  Entries are hash-chained for this session receipt. That proves
+                  reconstruction for the demo run - it is not a durable WORM
+                  store.
                 </dd>
               </div>
             </dl>
           </div>
         }
         architectureVisual={<WorkflowArchitectureFlow />}
-        architecture="UI starts a scenario. /api/workflow runs a TypeScript in-process state machine with an in-memory interrupt checkpoint; Approve request / Reject request resumes or stops the run. LangGraph and Postgres checkpoint config in the repo is reference only for this hosted demo."
+        architecture="UI starts a scenario. /api/workflow runs a TypeScript in-process state machine: policy check, optional authorization hold, intervention checkpoint, then execute or rollback. Approve / Reject resumes or rolls back the hold and emits a governance receipt. LangGraph and Postgres checkpoint config in the repo is reference only for this hosted demo."
         tradeoffs={[
           "Deterministic TypeScript routing fits this fixed money gate - clearer than an open-ended planner for a single threshold interrupt.",
-          "In-memory demo checkpoints - fine for a portfolio run, not durable across deploys or multiple instances.",
+          "In-memory demo checkpoints and hash-chained receipts - fine for a portfolio run, not durable across deploys or multiple instances.",
           "A durable graph or checkpoint runtime (for example LangGraph with Postgres) can be added when approvals must survive restarts or span instances; that path is config/reference here, not the public runtime.",
         ]}
         stack="TypeScript, Next.js, SSE"
@@ -320,18 +322,18 @@ export default function WorkflowPage() {
 
             {needsApproval ? (
               <div className="space-y-3 border-t border-line pt-4">
-                <p className="label-opal">Operations manager review</p>
+                <p className="label-opal">Intervention required</p>
                 <div className="rounded-xl border border-warn/25 bg-warn-soft px-3.5 py-3">
                   <p className="text-sm font-semibold text-opal-main">
-                    Frozen - amount vs threshold
+                    Frozen - authorization hold reserved
                   </p>
                   <p className="mt-1.5 font-mono text-sm text-opal-main">
                     ${(request.amount ?? 0).toLocaleString()} &gt; $
                     {FINANCIAL_THRESHOLD_USD.toLocaleString()}
                   </p>
                   <p className="mt-1.5 text-sm leading-relaxed text-opal-muted">
-                    Use Approve / Reject in the operations console on the right
-                    to resume or stop the run.
+                    Use Approve / Reject in the governance console on the right
+                    to release the hold to execute or roll it back.
                   </p>
                 </div>
               </div>

@@ -6,6 +6,8 @@
 import type { LogEntry } from "@/components/ui/TerminalStream";
 import {
   FINANCIAL_THRESHOLD_USD,
+  type GovernanceReceipt,
+  type HoldStatus,
   type WorkflowAuditEntry,
   type WorkflowDecision,
   type WorkflowNodeId,
@@ -31,6 +33,8 @@ export type FinalRunStatus =
   | "completed"
   | "rejected";
 
+export type PolicyLayerStatus = "pending" | "passed" | "denied";
+
 export interface WorkflowRunStatus {
   currentState: string;
   thresholdResult: ThresholdResult;
@@ -43,12 +47,29 @@ export interface WorkflowRunStatus {
   rejectReason: string | null;
   decisionActor: string | null;
   decisionAt: string | null;
+  policyStatus: PolicyLayerStatus;
+  policyId: string | null;
+  holdId: string | null;
+  holdStatus: HoldStatus;
+  rolledBack: boolean;
+  receipt: GovernanceReceipt | null;
 }
 
 function isAuditEntry(value: unknown): value is WorkflowAuditEntry {
   if (!value || typeof value !== "object") return false;
   const entry = value as Record<string, unknown>;
   return typeof entry.node === "string" && typeof entry.at === "string";
+}
+
+function isReceipt(value: unknown): value is GovernanceReceipt {
+  if (!value || typeof value !== "object") return false;
+  const receipt = value as Record<string, unknown>;
+  return (
+    typeof receipt.receiptId === "string" &&
+    typeof receipt.sessionId === "string" &&
+    typeof receipt.trailHash === "string" &&
+    typeof receipt.transaction === "string"
+  );
 }
 
 function collectAuditTrail(logs: LogEntry[]): WorkflowAuditEntry[] {
@@ -81,12 +102,33 @@ export function deriveWorkflowRunStatus(logs: LogEntry[]): WorkflowRunStatus {
   let rejectReason: string | null = null;
   let decisionActor: string | null = null;
   let decisionAt: string | null = null;
+  let policyStatus: PolicyLayerStatus = logs.length ? "pending" : "pending";
+  let policyId: string | null = null;
+  let holdId: string | null = null;
+  let holdStatus: HoldStatus = "none";
+  let rolledBack = false;
+  let receipt: GovernanceReceipt | null = null;
+
+  if (logs.length === 0) {
+    policyStatus = "pending";
+  }
 
   for (const log of logs) {
     const data = log.data ?? {};
     if (typeof data.sessionId === "string") sessionId = data.sessionId;
     if (typeof data.amount === "number") amount = data.amount;
     if (typeof data.node === "string") lastNode = data.node;
+    if (typeof data.policyId === "string") policyId = data.policyId;
+    if (typeof data.holdId === "string") holdId = data.holdId;
+    if (
+      data.holdStatus === "none" ||
+      data.holdStatus === "reserved" ||
+      data.holdStatus === "released_to_execute" ||
+      data.holdStatus === "rolled_back"
+    ) {
+      holdStatus = data.holdStatus;
+    }
+    if (isReceipt(data.receipt)) receipt = data.receipt;
 
     if (
       data.node === "financial_threshold" &&
@@ -96,6 +138,25 @@ export function deriveWorkflowRunStatus(logs: LogEntry[]): WorkflowRunStatus {
       thresholdResult = "skipped";
     } else if (typeof data.overThreshold === "boolean") {
       thresholdResult = data.overThreshold ? "over" : "under";
+    }
+
+    if (data.action === "POLICY_OK") {
+      policyStatus = "passed";
+    }
+    if (data.action === "POLICY_DENIED") {
+      policyStatus = "denied";
+    }
+
+    if (data.action === "HOLD_PLACED") {
+      holdStatus = "reserved";
+      thresholdResult = "over";
+    }
+    if (data.action === "HOLD_RELEASED_TO_EXECUTE") {
+      holdStatus = "released_to_execute";
+    }
+    if (data.action === "ROLLED_BACK") {
+      rolledBack = true;
+      holdStatus = "rolled_back";
     }
 
     if (data.action === "AWAITING_APPROVAL") {
@@ -145,6 +206,7 @@ export function deriveWorkflowRunStatus(logs: LogEntry[]): WorkflowRunStatus {
       decisionAt = entry.at;
       if (entry.reason) rejectReason = entry.reason;
     }
+    if (entry.policyId) policyId = entry.policyId;
   }
 
   const currentState =
@@ -153,7 +215,9 @@ export function deriveWorkflowRunStatus(logs: LogEntry[]): WorkflowRunStatus {
       : finalStatus === "paused"
         ? "awaiting_approval"
         : finalStatus === "rejected"
-          ? "rejected"
+          ? rolledBack
+            ? "rolled_back"
+            : "rejected"
           : finalStatus === "completed"
             ? "completed"
             : lastNode ?? "running";
@@ -170,6 +234,12 @@ export function deriveWorkflowRunStatus(logs: LogEntry[]): WorkflowRunStatus {
     rejectReason,
     decisionActor,
     decisionAt,
+    policyStatus: logs.length === 0 ? "pending" : policyStatus,
+    policyId,
+    holdId,
+    holdStatus,
+    rolledBack,
+    receipt,
   };
 }
 
