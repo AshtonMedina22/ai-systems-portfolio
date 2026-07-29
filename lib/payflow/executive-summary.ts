@@ -8,7 +8,6 @@ export interface ExecutiveKpis {
   vendorConfidence: string | null;
   vendorName: string | null;
   actionLabel: string | null;
-  timeSavedMinutes: number | null;
   statusLabel: string | null;
 }
 
@@ -18,7 +17,6 @@ const EMPTY: ExecutiveKpis = {
   vendorConfidence: null,
   vendorName: null,
   actionLabel: null,
-  timeSavedMinutes: null,
   statusLabel: null,
 };
 
@@ -31,7 +29,6 @@ export function deriveExecutiveKpis(logs: LogEntry[]): ExecutiveKpis {
   let riskLevel: RiskTone = "pending";
   let riskLabel = "Checking...";
   let actionLabel: string | null = null;
-  let timeSavedMinutes: number | null = null;
   let statusLabel: string | null = "In progress";
 
   for (const log of logs) {
@@ -54,7 +51,6 @@ export function deriveExecutiveKpis(logs: LogEntry[]): ExecutiveKpis {
       vendorConfidence = "No registry match";
       actionLabel = "Payment blocked - unknown vendor";
       statusLabel = "Rejected";
-      timeSavedMinutes = 8;
     }
 
     if (data.isMatch === true) {
@@ -67,7 +63,6 @@ export function deriveExecutiveKpis(logs: LogEntry[]): ExecutiveKpis {
       riskLabel = "High - needs review";
       actionLabel = "Payment held for review";
       statusLabel = "Held";
-      timeSavedMinutes = 15;
     }
 
     if (data.action === "POST_TO_ERP_LEDGER" || log.level === "success") {
@@ -75,7 +70,6 @@ export function deriveExecutiveKpis(logs: LogEntry[]): ExecutiveKpis {
       riskLabel = "Low";
       actionLabel = "Posted to the ledger";
       statusLabel = "Ready for payment";
-      timeSavedMinutes = 12;
     }
 
     if (
@@ -86,7 +80,6 @@ export function deriveExecutiveKpis(logs: LogEntry[]): ExecutiveKpis {
       riskLabel = "High - needs AP manager review";
       actionLabel = "Payment held for AP manager";
       statusLabel = "Held";
-      timeSavedMinutes = 15;
     }
 
     if (data.action === "HOLD_REJECTED") {
@@ -94,7 +87,6 @@ export function deriveExecutiveKpis(logs: LogEntry[]): ExecutiveKpis {
       riskLabel = "Rejected";
       actionLabel = "Hold rejected by AP manager";
       statusLabel = "Rejected";
-      timeSavedMinutes = 10;
     }
 
     if (data.action === "HOLD_RELEASED") {
@@ -102,7 +94,6 @@ export function deriveExecutiveKpis(logs: LogEntry[]): ExecutiveKpis {
       riskLabel = "Low";
       actionLabel = "Released and posted by AP manager";
       statusLabel = "Ready for payment";
-      timeSavedMinutes = 12;
     }
   }
 
@@ -112,7 +103,6 @@ export function deriveExecutiveKpis(logs: LogEntry[]): ExecutiveKpis {
     vendorConfidence,
     vendorName,
     actionLabel,
-    timeSavedMinutes,
     statusLabel,
   };
 }

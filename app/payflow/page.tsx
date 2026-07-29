@@ -282,12 +282,6 @@ export default function PayFlowPage() {
                     (isRunning ? "Running checks..." : "-")
                   }
                 />
-                {kpis.timeSavedMinutes != null ? (
-                  <ResultRow
-                    label="Time saved"
-                    value={`About ${kpis.timeSavedMinutes} min`}
-                  />
-                ) : null}
               </ResultStrip>
             ) : null}
 

@@ -89,7 +89,7 @@ export default function HomePage() {
         <div className="grid items-end gap-6 sm:gap-8 lg:grid-cols-[1.35fr_0.65fr] lg:gap-14">
           <div>
             <p className="eyebrow-opal">
-              {site.name} · {site.role}
+              {site.name} - {site.role}
             </p>
             <h1 className="mt-3 max-w-3xl font-display text-[34px] font-semibold leading-[1.08] tracking-[-0.035em] text-opal-main sm:mt-4 sm:text-5xl">
               Systems that make complex operations feel simple.
@@ -196,7 +196,7 @@ export default function HomePage() {
 
                 <div className="mt-auto pt-5">
                   <p className="mb-3 text-xs text-opal-muted">
-                    {project.tech.join(" · ")}
+                    {project.tech.join(", ")}
                   </p>
                   <div className="flex items-center gap-4">
                     <Link
@@ -211,7 +211,7 @@ export default function HomePage() {
                       rel="noopener noreferrer"
                       className="inline-flex h-9 items-center text-sm font-semibold text-accent-deep underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                     >
-                      Source ↗
+                      Read code
                     </a>
                   </div>
                 </div>
@@ -228,7 +228,7 @@ export default function HomePage() {
         <div className="grid gap-3 border-y border-line py-6 sm:grid-cols-[180px_1fr] sm:items-start">
           <p className="label-opal">Operator perspective</p>
           <p className="max-w-3xl text-[15px] leading-relaxed text-opal-muted">
-            Before I architected systems, I ran one—accountable for the people,
+            Before I architected systems, I ran one - accountable for the people,
             compliance, and numbers, not just the software. I build for the
             people who have to use the system when the day gets messy.
           </p>
