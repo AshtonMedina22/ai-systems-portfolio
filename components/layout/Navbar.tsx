@@ -5,7 +5,7 @@ import { useEffect, useId, useState } from "react";
 import { contactMailto, site } from "@/lib/site";
 
 const navLinkClass =
-  "rounded-lg px-2.5 py-1.5 text-sm font-medium text-opal-muted transition-colors hover:bg-violet-50 hover:text-opal-purple";
+  "rounded-lg px-2.5 py-1.5 text-sm font-medium text-opal-muted transition-colors hover:bg-accent-soft hover:text-opal-purple focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -21,22 +21,22 @@ export function Navbar() {
   }, [open]);
 
   return (
-    <header className="relative z-20 border-b border-slate-200/80 bg-white/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <header className="relative z-20 border-b border-white/60 bg-white/55 shadow-[0_10px_35px_-30px_rgba(62,66,120,0.6)] backdrop-blur-2xl backdrop-saturate-150">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="group flex min-w-0 items-center gap-2.5"
+          className="group flex min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           onClick={() => setOpen(false)}
         >
           <span
-            className="h-2.5 w-2.5 shrink-0 rounded-full bg-gradient-to-r from-opal-purple to-opal-violet"
+            className="h-2.5 w-2.5 shrink-0 rounded-full bg-opal-aqua shadow-[0_0_12px_rgba(126,177,212,0.5)]"
             aria-hidden
           />
           <span className="min-w-0">
-            <span className="block font-display text-[15px] font-medium tracking-tight text-opal-main transition-colors group-hover:text-opal-violet sm:text-base">
+            <span className="block font-display text-[15px] font-semibold tracking-tight text-opal-main transition-colors group-hover:text-opal-violet sm:text-base">
               {site.name}
             </span>
-            <span className="block font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-opal-label sm:text-[11px]">
+            <span className="block text-[11px] font-medium text-opal-muted sm:text-xs">
               {site.role}
             </span>
           </span>
@@ -65,24 +65,18 @@ export function Navbar() {
           >
             LinkedIn
           </a>
-          <a
-            href={contactMailto}
-            className="ml-1 inline-flex items-center rounded-xl bg-opal-purple px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-opal-violet"
-          >
+          <a href={contactMailto} className="btn-primary ml-1 px-3.5 py-2">
             Get in Touch
           </a>
         </nav>
 
         <div className="flex items-center gap-2 sm:hidden">
-          <a
-            href={contactMailto}
-            className="inline-flex items-center rounded-xl bg-opal-purple px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-opal-violet"
-          >
-            Get in Touch
+          <a href={contactMailto} className="btn-primary px-2.5 py-1.5 text-xs">
+            Contact
           </a>
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-opal-main transition-colors hover:bg-violet-50"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-line text-opal-main transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             aria-expanded={open}
             aria-controls={menuId}
             aria-label={open ? "Close menu" : "Open menu"}
@@ -113,7 +107,7 @@ export function Navbar() {
       {open ? (
         <nav
           id={menuId}
-          className="border-t border-slate-200/80 bg-white px-4 py-3 sm:hidden"
+          className="border-t border-white/60 bg-white/70 px-4 py-3 backdrop-blur-2xl"
           aria-label="Mobile"
         >
           <div className="flex flex-col gap-1">

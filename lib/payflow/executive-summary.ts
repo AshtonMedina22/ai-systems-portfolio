@@ -78,12 +78,31 @@ export function deriveExecutiveKpis(logs: LogEntry[]): ExecutiveKpis {
       timeSavedMinutes = 12;
     }
 
-    if (data.action === "ESCALATE_TO_COMPLIANCE") {
+    if (
+      data.action === "HOLD_OPENED" ||
+      data.action === "ESCALATE_TO_COMPLIANCE"
+    ) {
       riskLevel = "high";
-      riskLabel = "High - needs review";
-      actionLabel = "Payment held for review";
+      riskLabel = "High - needs AP manager review";
+      actionLabel = "Payment held for AP manager";
       statusLabel = "Held";
       timeSavedMinutes = 15;
+    }
+
+    if (data.action === "HOLD_REJECTED") {
+      riskLevel = "blocked";
+      riskLabel = "Rejected";
+      actionLabel = "Hold rejected by AP manager";
+      statusLabel = "Rejected";
+      timeSavedMinutes = 10;
+    }
+
+    if (data.action === "HOLD_RELEASED") {
+      riskLevel = "low";
+      riskLabel = "Low";
+      actionLabel = "Released and posted by AP manager";
+      statusLabel = "Ready for payment";
+      timeSavedMinutes = 12;
     }
   }
 
@@ -123,8 +142,14 @@ export function resultBadgeForLog(log: LogEntry): {
   if (data.posted === true || data.action === "POST_TO_ERP_LEDGER") {
     return { label: "Posted", tone: "ok" };
   }
-  if (data.action === "ESCALATE_TO_COMPLIANCE") {
-    return { label: "Escalated", tone: "danger" };
+  if (data.action === "HOLD_OPENED" || data.action === "ESCALATE_TO_COMPLIANCE") {
+    return { label: "Held", tone: "danger" };
+  }
+  if (data.action === "HOLD_REJECTED") {
+    return { label: "Rejected", tone: "danger" };
+  }
+  if (data.action === "HOLD_RELEASED") {
+    return { label: "Released", tone: "ok" };
   }
 
   // Migration pipeline events (shared terminal)

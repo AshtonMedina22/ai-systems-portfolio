@@ -1,26 +1,24 @@
 import type { Metadata } from "next";
-import { Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Inter, Manrope, JetBrains_Mono } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-const display = Fraunces({
+const display = Manrope({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
 });
 
-const sans = IBM_Plex_Sans({
+const sans = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
   variable: "--font-sans",
   display: "swap",
 });
 
-const mono = IBM_Plex_Mono({
+const mono = JetBrains_Mono({
   subsets: ["latin"],
-  weight: ["400", "500"],
   variable: "--font-mono",
   display: "swap",
 });
@@ -62,11 +60,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      className={`${display.variable} ${sans.variable} ${mono.variable}`}
+    >
       <body className="bg-opal-glow min-h-screen font-sans text-ink antialiased">
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
         <div className="flex min-h-screen flex-col">
           <Navbar />
-          <div className="flex-1">{children}</div>
+          <div id="main-content" className="flex-1">
+            {children}
+          </div>
           <Footer />
         </div>
       </body>

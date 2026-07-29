@@ -10,10 +10,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "test:mcp": "python -m pytest mcp-server/test_mcp_tools.py -v",
     "test:migrate": "python -m pytest mcp-server/test_migrate_pipeline.py -v",
     "test:workflow": "python -m pytest mcp-server/test_workflow_graph.py -v",
-    "test:python": "python -m pytest mcp-server/test_mcp_tools.py mcp-server/test_migrate_pipeline.py mcp-server/test_workflow_graph.py -v"
+    "test:python": "python -m pytest mcp-server/test_mcp_tools.py mcp-server/test_migrate_pipeline.py mcp-server/test_workflow_graph.py -v",
+    "test:payflow-sse": "tsx --test tests/payflow-sse.test.ts"
   },
   "repository": {
     "type": "git",
@@ -34,6 +36,7 @@
     "autoprefixer": "^10.5.4",
     "postcss": "^8.5.22",
     "tailwindcss": "^3.4.19",
+    "tsx": "^4.23.1",
     "typescript": "^5.9.3"
   }
 }

@@ -39,7 +39,7 @@ const PRESETS: Array<{
   {
     key: "spoofed_bank",
     label: "Suspicious invoice",
-    detail: "Vendor-name typo and mismatched routing number",
+    detail: "Tax ID matches with name variation; routing does not match",
     tone: "danger",
   },
   {
@@ -132,67 +132,67 @@ export default function PayFlowPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen">
       <GlassBox
         title="PayFlow"
         framing={PAYFLOW_FRAMING}
         badge="Project 1"
         purpose="Invoice verification that flags mismatched vendor bank details before payout."
-        valueLine="Replaces manual keying of every invoice, and stops bad vendor or routing before money moves."
-        controlStatement="Nothing posts to the ledger without passing both checks - vendor match against the registry, and bank routing against the approved profile."
-        challenge="Manual invoice checks take hours, and a slightly altered routing number can send money to the wrong account before anyone catches it."
-        solution="An invoice verification path that matches vendors to the registry, checks bank routing against approved profiles, and holds mismatched payouts."
-        impact="Bad vendor or routing is held before money moves, with a clear path for AP review instead of hoping someone notices."
+        valueLine="Receives structured invoice data, runs automated vendor and bank verification, and blocks ledger posting until both checks pass."
+        controlStatement="Nothing posts to the ledger without server-owned verification evidence from both checks - vendor match against the registry, and bank routing against the approved profile."
+        challenge="A slightly altered routing number can send money to the wrong account before anyone catches it, especially when vendor checks are informal."
+        solution="An invoice verification path that matches vendors to the registry, checks bank routing against approved profiles, and holds mismatched payouts for AP manager review."
+        impact="Unknown vendors and routing mismatches are held before money moves, with an explicit AP manager release or reject path."
         whenWrong={
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-4 sm:px-5 sm:py-5">
-            <p className="label-opal">What happens when it is wrong</p>
-            <dl className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-line bg-console-panel px-4 py-4 sm:px-5 sm:py-5">
+            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <dt className="text-sm font-semibold text-opal-main">
                   Mismatch path
                 </dt>
-                <dd className="mt-1 text-[14px] leading-relaxed text-opal-muted sm:text-[15px]">
-                  A mistyped vendor name or routing that does not match the
-                  registry fails the gate. The run intercepts before any ledger
-                  post.
+                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
+                  Unknown or low-confidence vendors fail the registry gate.
+                  Exact tax-ID match can allow name variation; a routing
+                  mismatch against the approved profile fails the bank check.
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-semibold text-opal-main">
                   Payment held
                 </dt>
-                <dd className="mt-1 text-[14px] leading-relaxed text-opal-muted sm:text-[15px]">
-                  The payout is flagged and held. Ops console status moves to
-                  intercepted or blocked - nothing clears for payment.
+                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
+                  A routing mismatch opens a persisted demo hold. Ops console
+                  status moves to held - nothing posts without fresh evidence.
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-semibold text-opal-main">
                   Who reviews
                 </dt>
-                <dd className="mt-1 text-[14px] leading-relaxed text-opal-muted sm:text-[15px]">
-                  AP or a manager reviews the escalation notice the live run
-                  surfaces in the ops console.
+                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
+                  AP manager reviews the hold in the ops console, with reason
+                  and audit trail on resolution.
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-semibold text-opal-main">
                   How it is released
                 </dt>
-                <dd className="mt-1 text-[14px] leading-relaxed text-opal-muted sm:text-[15px]">
-                  A person resolves the hold after review. This demo stops at
-                  intercept and notice - it does not auto-clear the payment.
+                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
+                  Release requires applying the approved profile routing,
+                  re-running both checks, and posting with fresh evidence.
+                  Reject closes the hold without posting.
                 </dd>
               </div>
             </dl>
           </div>
         }
         architectureVisual={<PayFlowArchitectureFlow />}
-        architecture="Each step streams into the ops console over SSE. Pass posts to the ledger; fail holds the payment and raises the escalation notice you see in the live run."
+        architecture="Each step streams into the ops console over SSE. Hosted FastMCP is preferred when reachable; otherwise the embedded tool runtime enforces the same evidence gate. Pass posts; fail opens an AP manager hold."
         tradeoffs={[
-          "Live MCP on Vercel means cold starts and env wiring - slower first run than a pure mock, but the tool path is real.",
-          "Deterministic tool sequence over an open-ended LLM agent - clearer demos and safer money decisions, less agent theater.",
-          "Embedded MCP fallback when HTTP MCP is down keeps the portfolio demo up; local FastMCP is the fuller integration story.",
+          "Demo/session hold storage is in-memory - fine for a portfolio run, not durable across serverless cold starts.",
+          "Deterministic tool sequence over an open-ended LLM agent - clearer demos and safer money decisions.",
+          "Embedded MCP fallback when HTTP MCP is down keeps the public demo accurate; local FastMCP is the fuller integration story.",
         ]}
         stack="Python, FastMCP, Next.js, SSE"
         isRunning={isRunning}
@@ -218,7 +218,7 @@ export default function PayFlowPage() {
                 <span className="font-mono text-[12px] font-semibold text-opal-label">
                   {activeInvoice.invoiceId}
                 </span>
-                <span className="font-display text-xl font-medium text-opal-violet">
+                <span className="font-display text-xl font-semibold text-accent-deep">
                   ${activeInvoice.invoiceAmount.toLocaleString()}
                 </span>
               </div>
@@ -230,9 +230,9 @@ export default function PayFlowPage() {
                       <span
                         className={
                           selectedPreset === "spoofed_bank"
-                            ? "text-rose-700"
+                            ? "text-danger"
                             : selectedPreset === "unknown_vendor"
-                              ? "text-amber-700"
+                              ? "text-warn"
                               : undefined
                         }
                       >
@@ -243,7 +243,7 @@ export default function PayFlowPage() {
                   {
                     label: "Tax ID",
                     value: (
-                      <span className="font-mono text-[12px]">
+                      <span className="font-mono text-xs">
                         {activeInvoice.vendorTaxId}
                       </span>
                     ),
@@ -252,10 +252,8 @@ export default function PayFlowPage() {
                     label: "Routing",
                     value: (
                       <span
-                        className={`font-mono text-[12px] ${
-                          selectedPreset === "spoofed_bank"
-                            ? "text-rose-700"
-                            : ""
+                        className={`font-mono text-xs ${
+                          selectedPreset === "spoofed_bank" ? "text-danger" : ""
                         }`}
                       >
                         {activeInvoice.bankDetails.routingNumber}
@@ -308,9 +306,12 @@ export default function PayFlowPage() {
             invoice={activeInvoice}
             liveLabel={PAYFLOW_FRAMING}
             onClear={() => setLogs([])}
+            onAppendLogs={(entries) =>
+              setLogs((prev) => [...prev, ...entries])
+            }
           />
         }
       />
-    </div>
+    </main>
   );
 }

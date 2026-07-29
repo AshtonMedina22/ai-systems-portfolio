@@ -5,7 +5,7 @@ import type {
   WorkflowDecision,
   WorkflowScenarioKey,
 } from "@/lib/workflow/types";
-import { SAMPLE_WORKFLOWS } from "@/lib/workflow/types";
+import { SAMPLE_WORKFLOWS, WORKFLOW_REVIEWER_ROLE } from "@/lib/workflow/types";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const action = body.action as string | undefined;
 
-    // Resume a paused checkpoint (manager sign-off).
+    // Resume a paused checkpoint (operations manager sign-off).
     if (action === "approve" || action === "reject") {
       const sessionId = body.sessionId as string | undefined;
       if (!sessionId || typeof sessionId !== "string") {
@@ -38,11 +38,25 @@ export async function POST(req: NextRequest) {
         return Response.json({ error: "Invalid decision." }, { status: 400 });
       }
 
-      const result = submitDecision(sessionId, action);
+      const reason =
+        typeof body.reason === "string" ? body.reason : undefined;
+      const actor =
+        typeof body.actor === "string" && body.actor.trim()
+          ? body.actor.trim()
+          : WORKFLOW_REVIEWER_ROLE;
+
+      const result = submitDecision(sessionId, action, { reason, actor });
       if (!result.ok) {
         return Response.json({ error: result.error }, { status: 409 });
       }
-      return Response.json({ ok: true, decision: action, sessionId });
+      return Response.json({
+        ok: true,
+        decision: action,
+        sessionId,
+        actor: result.result.actor,
+        decidedAt: result.result.at,
+        reason: result.result.reason ?? null,
+      });
     }
 
     // Start a new workflow and stream state transitions over SSE.

@@ -144,7 +144,7 @@ export default function MigratePage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen">
       <GlassBox
         title="Client Migration Pipeline"
         framing={MIGRATE_FRAMING}
@@ -183,7 +183,7 @@ export default function MigratePage() {
                 <span className="truncate font-mono text-[12px] font-semibold text-opal-label">
                   {usingUpload ? uploadName : dataset.fileName}
                 </span>
-                <span className="shrink-0 font-mono text-[11px] font-semibold text-opal-violet">
+                <span className="shrink-0 font-mono text-[11px] font-semibold text-accent-deep">
                   {DEMO_TENANT_SCHEMA}
                 </span>
               </div>
@@ -200,9 +200,9 @@ export default function MigratePage() {
                     label: "Format",
                     value: (
                       <span
-                        className={`font-mono text-[12px] ${
+                        className={`font-mono text-xs ${
                           !usingUpload && selected === "corrupted"
-                            ? "text-rose-700"
+                            ? "text-danger"
                             : ""
                         }`}
                       >
@@ -230,11 +230,11 @@ export default function MigratePage() {
                 htmlFor="migrate-csv-upload"
                 className={`flex cursor-pointer items-center gap-2.5 border-b border-dashed py-3 text-sm transition-colors ${
                   usingUpload
-                    ? "border-opal-purple text-opal-main"
-                    : "border-slate-300 text-opal-muted hover:border-violet-300 hover:text-opal-main"
+                    ? "border-accent text-opal-main"
+                    : "border-line text-opal-muted hover:border-accent/50 hover:text-opal-main"
                 }`}
               >
-                <Upload className="h-4 w-4 shrink-0 text-opal-purple" />
+                <Upload className="h-4 w-4 shrink-0 text-accent" />
                 <span className="min-w-0 truncate font-medium">
                   {usingUpload ? uploadName : "Choose a CSV file"}
                 </span>
@@ -292,6 +292,6 @@ export default function MigratePage() {
           />
         }
       />
-    </div>
+    </main>
   );
 }

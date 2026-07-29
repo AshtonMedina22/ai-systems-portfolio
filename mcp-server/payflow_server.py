@@ -1,5 +1,5 @@
 """
-PayFlow FastMCP Server - Enterprise Accounts Payable & Anti-Fraud tools.
+PayFlow FastMCP Server - Enterprise Accounts Payable and anti-fraud tools.
 
 Exposes MCP tools over Streamable HTTP at http://127.0.0.1:8000/mcp
 """
@@ -24,7 +24,9 @@ mcp = FastMCP(
     name="payflow-ap-agent",
     instructions=(
         "Enterprise AP MCP server. Use tools/list, then "
-        "verify_vendor_entity, check_bank_routing, and post_erp_ledger."
+        "verify_vendor_entity, check_bank_routing, and post_erp_ledger. "
+        "Ledger posting requires both vendor and bank evidence tokens from "
+        "successful checks on the submitted invoice data."
     ),
 )
 
@@ -48,10 +50,33 @@ def tool_check_bank_routing(
 
 @mcp.tool(name="post_erp_ledger")
 def tool_post_erp_ledger(
-    invoiceId: str, vendorId: str, amount: float, currency: str = "USD"
+    invoiceId: str,
+    vendorId: str,
+    amount: float,
+    currency: str = "USD",
+    vendorEvidenceToken: str = "",
+    bankEvidenceToken: str = "",
+    vendorName: str = "",
+    taxId: str = "",
+    routingNumber: str = "",
+    accountNumber: str = "",
 ) -> dict[str, Any]:
-    """Post an approved invoice to the enterprise accounts-payable ledger."""
-    return post_erp_ledger(invoiceId, vendorId, amount, currency)
+    """Post an invoice to the AP ledger only with valid, bound, single-use check evidence."""
+    result = post_erp_ledger(
+        invoiceId,
+        vendorId,
+        amount,
+        currency,
+        vendor_evidence_token=vendorEvidenceToken or None,
+        bank_evidence_token=bankEvidenceToken or None,
+        vendor_name=vendorName or None,
+        tax_id=taxId or None,
+        routing_number=routingNumber or None,
+        account_number=accountNumber or None,
+    )
+    if result.get("error"):
+        raise ValueError(result["message"])
+    return result
 
 
 @mcp.custom_route("/health", methods=["GET"])
@@ -90,7 +115,10 @@ async def tools_manifest(_request: Request) -> Response:
                 },
                 {
                     "name": "post_erp_ledger",
-                    "description": "Post approved invoice to AP ledger",
+                    "description": (
+                        "Post approved invoice to AP ledger "
+                        "(requires vendor + bank evidence)"
+                    ),
                 },
             ],
         }

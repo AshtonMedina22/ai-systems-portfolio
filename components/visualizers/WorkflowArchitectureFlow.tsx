@@ -1,27 +1,27 @@
 import React from "react";
+import { FINANCIAL_THRESHOLD_USD } from "@/lib/workflow/types";
 
 /** Compact Opal-styled path for technical reviewers. */
-export function PayFlowArchitectureFlow() {
+export function WorkflowArchitectureFlow() {
   return (
     <figure
       className="mt-4"
-      aria-label="PayFlow architecture: Browser to Next.js SSE route, FastMCP or embedded tools, ERP registry checks, then pass to ledger post or fail to hold with AP manager review"
+      aria-label={`Workflow architecture: Intake to compliance to threshold decision. At or below $${FINANCIAL_THRESHOLD_USD.toLocaleString()} continues to final execution. Above threshold pauses for operations manager approve to resume or reject to stop. Public page uses a TypeScript state machine with in-memory checkpoint.`}
     >
       <ol className="m-0 flex list-none flex-col gap-2 p-0 sm:flex-row sm:flex-wrap sm:items-stretch sm:gap-0">
         {[
-          { id: "browser", n: "01", label: "Browser", detail: "Invoice scenario" },
-          { id: "route", n: "02", label: "Next.js route", detail: "SSE stream" },
+          { id: "intake", n: "01", label: "Intake", detail: "Request packet" },
           {
-            id: "mcp",
-            n: "03",
-            label: "Tool runtime",
-            detail: "Hosted MCP or embedded fallback",
+            id: "compliance",
+            n: "02",
+            label: "Compliance",
+            detail: "Policy and required fields",
           },
           {
-            id: "erp",
-            n: "04",
-            label: "ERP registry",
-            detail: "Vendor + bank checks",
+            id: "threshold",
+            n: "03",
+            label: "Threshold",
+            detail: `Gate at $${FINANCIAL_THRESHOLD_USD.toLocaleString()}`,
           },
         ].map((step, index, arr) => (
           <li
@@ -67,36 +67,42 @@ export function PayFlowArchitectureFlow() {
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="rounded-xl border border-ok/20 bg-ok-soft px-3.5 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-ok">
-            Pass
+            At or below threshold
           </p>
           <p className="mt-1 text-sm font-semibold text-opal-main">
-            Fresh evidence - ledger post
+            Final execution
           </p>
           <p className="mt-0.5 text-sm leading-snug text-opal-muted">
-            Both checks issue single-use evidence bound to the invoice data.
-            Ledger posting rejects missing, stale, or replayed evidence.
+            Routine path continues without an operations manager pause.
           </p>
         </div>
-        <div className="rounded-xl border border-danger/20 bg-danger-soft px-3.5 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-danger">
-            Fail
+        <div className="rounded-xl border border-warn/20 bg-warn-soft px-3.5 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-warn">
+            Above threshold
           </p>
           <p className="mt-1 text-sm font-semibold text-opal-main">
-            Hold - AP manager review
+            Pause - operations manager
           </p>
           <p className="mt-0.5 text-sm leading-snug text-opal-muted">
-            Routing mismatch opens a hold. Release requires corrected approved
-            routing, both checks re-run, then post. Reject closes without posting.
+            Approve resumes to final execution. Reject stops downstream steps.
           </p>
         </div>
       </div>
 
+      <p className="mt-3 text-sm leading-snug text-opal-muted">
+        Public runtime: TypeScript state machine with an in-memory checkpoint.
+        LangGraph and Postgres checkpoint config in the repo is reference only
+        for this hosted demo.
+      </p>
+
       <figcaption className="sr-only">
-        Browser posts an invoice to a Next.js route that streams over SSE. Tools
-        run on hosted FastMCP when available, otherwise the embedded fallback.
-        The ERP registry runs vendor and bank checks. Pass posts to the ledger
-        with verification evidence. Fail opens a hold for AP manager review,
-        who can apply corrected approved routing and re-check, or reject.
+        Browser starts a scenario on a Next.js SSE route. A TypeScript state
+        machine runs intake, compliance, and a financial threshold decision. At
+        or below the threshold, final execution continues. Above the threshold,
+        the run pauses for operations manager approval to resume or reject to
+        stop. Audit events are a session trail in memory, not an immutable
+        store. LangGraph with Postgres checkpointing is config and reference
+        only, not the public runtime.
       </figcaption>
     </figure>
   );

@@ -14,6 +14,7 @@ import {
 import {
   FINANCIAL_THRESHOLD_USD,
   SAMPLE_WORKFLOWS,
+  WORKFLOW_REVIEWER_ROLE,
   type WorkflowAuditEntry,
   type WorkflowNodeId,
   type WorkflowRequest,
@@ -44,12 +45,14 @@ function sleep(ms: number) {
 function audit(
   trail: WorkflowAuditEntry[],
   node: WorkflowNodeId,
-  detail: string
+  detail: string,
+  extra?: Partial<Pick<WorkflowAuditEntry, "actor" | "decision" | "reason">>
 ): WorkflowAuditEntry {
   const entry: WorkflowAuditEntry = {
     node,
     at: new Date().toISOString(),
     detail,
+    ...extra,
   };
   trail.push(entry);
   return entry;
@@ -218,55 +221,76 @@ export async function* runWorkflowEngine(
     audit(
       trail,
       "awaiting_approval",
-      `Paused for manager sign-off on $${amount!.toLocaleString()} payout.`
+      `Paused for ${WORKFLOW_REVIEWER_ROLE} sign-off on $${amount!.toLocaleString()} payout.`
     );
 
     yield createLogEntry(
       "warning",
       "node:awaiting_approval",
-      `Workflow paused. Manager sign-off needed before the $${amount!.toLocaleString()} payout can run.`,
+      `Workflow paused. ${WORKFLOW_REVIEWER_ROLE} sign-off needed before the $${amount!.toLocaleString()} payout can run.`,
       {
         action: "AWAITING_APPROVAL",
         sessionId: id,
         amount,
         threshold: FINANCIAL_THRESHOLD_USD,
+        overThreshold: true,
         checkpoint: true,
         node: "awaiting_approval",
-        auditTrail: trail,
+        reviewerRole: WORKFLOW_REVIEWER_ROLE,
+        auditTrail: [...trail],
       }
     );
 
-    const decision = await waitForDecision(session);
+    const decisionResult = await waitForDecision(session);
 
-    if (decision === "reject") {
+    if (decisionResult.decision === "reject") {
       markSessionRejected(session);
-      audit(
-        trail,
-        "rejected",
-        "Manager rejected the payout. Workflow stopped."
-      );
+      const rejectDetail = decisionResult.reason
+        ? `${WORKFLOW_REVIEWER_ROLE} rejected the payout. Reason: ${decisionResult.reason}`
+        : `${WORKFLOW_REVIEWER_ROLE} rejected the payout. Workflow stopped.`;
+      audit(trail, "rejected", rejectDetail, {
+        actor: decisionResult.actor,
+        decision: "reject",
+        reason: decisionResult.reason,
+      });
       yield createLogEntry(
         "error",
         "workflow:checkpoint",
-        `Manager rejected ${request.requestId}. Payout did not run.`,
+        `${WORKFLOW_REVIEWER_ROLE} rejected ${request.requestId}. Downstream steps did not run.`,
         {
           action: "REJECTED",
           sessionId: id,
           node: "rejected",
-          auditTrail: trail,
+          actor: decisionResult.actor,
+          decidedAt: decisionResult.at,
+          reason: decisionResult.reason,
+          auditTrail: [...trail],
         }
       );
       return;
     }
 
+    audit(
+      trail,
+      "financial_threshold",
+      `${WORKFLOW_REVIEWER_ROLE} approved. Resuming toward final execution.`,
+      {
+        actor: decisionResult.actor,
+        decision: "approve",
+      }
+    );
+
     yield createLogEntry(
       "success",
       "workflow:checkpoint",
-      "Manager approved. Resuming from checkpoint toward final execution.",
+      `${WORKFLOW_REVIEWER_ROLE} approved. Resuming from checkpoint toward final execution.`,
       {
         action: "APPROVED",
         sessionId: id,
         node: "financial_threshold",
+        actor: decisionResult.actor,
+        decidedAt: decisionResult.at,
+        auditTrail: [...trail],
       }
     );
     await sleep(350);
@@ -274,12 +298,13 @@ export async function* runWorkflowEngine(
     yield createLogEntry(
       "tool_result",
       "node:financial_threshold",
-      "Threshold clear - no manager pause on this path.",
+      "Threshold clear - no operations manager pause on this path.",
       {
         node: "financial_threshold",
         status: "ok",
         amount,
         threshold: FINANCIAL_THRESHOLD_USD,
+        overThreshold: false,
       }
     );
   }
@@ -354,12 +379,12 @@ export async function* runWorkflowEngine(
     "workflow:engine",
     scenarioKey === "inventory_realloc"
       ? `Inventory re-allocation ${request.requestId} finished. Handoffs stayed visible end to end.`
-      : `Vendor contract payout ${request.requestId} finished after manager sign-off.`,
+      : `Vendor contract payout ${request.requestId} finished after ${WORKFLOW_REVIEWER_ROLE} sign-off.`,
     {
       action: "COMPLETED",
       sessionId: id,
       node: "completed",
-      auditTrail: trail,
+      auditTrail: [...trail],
       graph: [
         "intake",
         "compliance_check",

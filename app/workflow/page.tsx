@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { GlassBox } from "@/components/ui/GlassBox";
 import { WorkflowOpsConsole } from "@/components/visualizers/WorkflowOpsConsole";
+import { WorkflowArchitectureFlow } from "@/components/visualizers/WorkflowArchitectureFlow";
 import { Badge } from "@/components/ui/Badge";
 import {
   DemoPrimaryButton,
@@ -15,10 +16,11 @@ import {
 import {
   FINANCIAL_THRESHOLD_USD,
   SAMPLE_WORKFLOWS,
+  WORKFLOW_REVIEWER_ROLE,
   type WorkflowScenarioKey,
 } from "@/lib/workflow/types";
 import { WORKFLOW_FRAMING } from "@/lib/workflow/runtime";
-import { Check, X } from "lucide-react";
+import { deriveWorkflowRunStatus } from "@/lib/workflow/run-status";
 import type { BadgeTone } from "@/components/ui/Badge";
 import type { LogEntry } from "@/components/ui/TerminalStream";
 
@@ -42,57 +44,12 @@ const PRESETS: Array<{
   },
 ];
 
-type FlowStatus = "idle" | "running" | "paused" | "done" | "rejected";
-
-function deriveFlowState(logs: LogEntry[]): {
-  status: FlowStatus;
-  statusLabel: string;
-  tone: BadgeTone;
-  sessionId: string | null;
-  lastNode: string | null;
-} {
-  let status: FlowStatus = logs.length ? "running" : "idle";
-  let statusLabel = logs.length ? "Running..." : "Idle";
-  let tone: BadgeTone = "neutral";
-  let sessionId: string | null = null;
-  let lastNode: string | null = null;
-
-  for (const log of logs) {
-    const data = log.data ?? {};
-    if (typeof data.sessionId === "string") sessionId = data.sessionId;
-    if (typeof data.node === "string") lastNode = data.node;
-
-    if (data.action === "AWAITING_APPROVAL") {
-      status = "paused";
-      statusLabel = "Waiting on manager";
-      tone = "warn";
-    }
-    if (data.action === "APPROVED") {
-      status = "running";
-      statusLabel = "Approved - finishing";
-      tone = "ok";
-    }
-    if (data.action === "REJECTED") {
-      status = "rejected";
-      statusLabel = "Rejected";
-      tone = "danger";
-    }
-    if (
-      data.action === "COMPLETED" ||
-      data.node === "completed" ||
-      (log.level === "success" &&
-        typeof data.action === "string" &&
-        data.action !== "APPROVED")
-    ) {
-      if (status !== "rejected") {
-        status = "done";
-        statusLabel = "Completed";
-        tone = "ok";
-      }
-    }
-  }
-
-  return { status, statusLabel, tone, sessionId, lastNode };
+function statusTone(finalStatus: string): BadgeTone {
+  if (finalStatus === "paused") return "warn";
+  if (finalStatus === "rejected") return "danger";
+  if (finalStatus === "completed") return "ok";
+  if (finalStatus === "running") return "neutral";
+  return "neutral";
 }
 
 export default function WorkflowPage() {
@@ -103,9 +60,10 @@ export default function WorkflowPage() {
   const [deciding, setDeciding] = useState(false);
 
   const request = SAMPLE_WORKFLOWS[selected];
-  const flow = useMemo(() => deriveFlowState(logs), [logs]);
+  const run = useMemo(() => deriveWorkflowRunStatus(logs), [logs]);
   const showImpact = logs.length > 0 || isRunning;
-  const needsApproval = flow.status === "paused" && !!flow.sessionId;
+  const needsApproval =
+    run.finalStatus === "paused" && !!run.sessionId;
 
   const handleSelect = (key: WorkflowScenarioKey) => {
     if (isRunning) return;
@@ -172,15 +130,27 @@ export default function WorkflowPage() {
     }
   };
 
-  const handleDecision = async (action: "approve" | "reject") => {
-    if (!flow.sessionId || deciding) return;
+  const handleDecision = async (
+    action: "approve" | "reject",
+    reason?: string
+  ) => {
+    if (!run.sessionId || deciding) return;
     setDeciding(true);
 
     try {
       const response = await fetch("/api/workflow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, sessionId: flow.sessionId }),
+        body: JSON.stringify({
+          action,
+          sessionId: run.sessionId,
+          actor: WORKFLOW_REVIEWER_ROLE,
+          ...(action === "reject" && reason?.trim()
+            ? { reason: reason.trim() }
+            : action === "reject"
+              ? { reason: "Rejected by operations manager." }
+              : {}),
+        }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -194,7 +164,7 @@ export default function WorkflowPage() {
             message:
               typeof body.error === "string"
                 ? body.error
-                : "Could not submit manager decision.",
+                : "Could not submit operations manager decision.",
           },
         ]);
       }
@@ -207,7 +177,8 @@ export default function WorkflowPage() {
           timestamp: new Date().toLocaleTimeString(),
           level: "error",
           source: "client:workflow",
-          message: "Failed to reach the workflow API for Approve / Reject.",
+          message:
+            "Failed to reach the workflow API for Approve request / Reject request.",
         },
       ]);
     } finally {
@@ -215,21 +186,88 @@ export default function WorkflowPage() {
     }
   };
 
+  const thresholdDisplay =
+    run.thresholdResult === "over"
+      ? "Over"
+      : run.thresholdResult === "under"
+        ? "Under"
+        : run.thresholdResult === "skipped"
+          ? "Skipped"
+          : run.thresholdResult === "pending"
+            ? "Pending"
+            : "n/a";
+
+  const managerDisplay =
+    run.managerDecision === "awaiting"
+      ? "Awaiting"
+      : run.managerDecision === "approved"
+        ? "Approved"
+        : run.managerDecision === "rejected"
+          ? "Rejected"
+          : "None";
+
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen">
       <GlassBox
         title="Workflow & Approvals"
         framing={WORKFLOW_FRAMING}
         badge="Project 3"
-        purpose="Process runner with a manager checkpoint above financial thresholds."
-        challenge="Multi-site requests stall in email, and high-value steps can move without a clear manager sign-off."
-        solution={`A step runner that handles routine work, then pauses above $${FINANCIAL_THRESHOLD_USD.toLocaleString()} until a manager approves or rejects.`}
-        impact="Routine work proceeds; high-risk spend stops for an explicit manager decision instead of dying in email."
-        architecture="UI starts a scenario. /api/workflow runs an in-process state machine with an interrupt checkpoint; Approve / Reject resumes the run. Config scaffolding for a live graph and checkpoint backend is present but unused."
+        purpose="Process runner with an operations manager checkpoint above financial thresholds."
+        valueLine="Routine paths continue. Requests over $10,000 pause for operations manager approval; reject stops downstream execution."
+        controlStatement={`Nothing above $${FINANCIAL_THRESHOLD_USD.toLocaleString()} continues without an explicit operations manager Approve or Reject on the paused checkpoint.`}
+        challenge="Multi-site requests stall in email, and high-value steps can move without a clear operations manager sign-off."
+        solution={`A step runner that handles routine work, then pauses above $${FINANCIAL_THRESHOLD_USD.toLocaleString()} until an operations manager approves or rejects.`}
+        impact="Routine work proceeds; high-risk spend stops for an explicit operations manager decision instead of dying in email."
+        whenWrong={
+          <div className="rounded-xl border border-line bg-console-panel px-4 py-4 sm:px-5 sm:py-5">
+            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <dt className="text-sm font-semibold text-opal-main">
+                  Over-threshold path
+                </dt>
+                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
+                  Amounts above $
+                  {FINANCIAL_THRESHOLD_USD.toLocaleString()} freeze at the
+                  threshold gate. Final execution does not run until Approve.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-semibold text-opal-main">
+                  Reject stops the run
+                </dt>
+                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
+                  Reject ends the session. Downstream steps do not execute.
+                  This demo does not roll back external side effects.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-semibold text-opal-main">
+                  Who reviews
+                </dt>
+                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
+                  Operations manager reviews in the ops console, with actor,
+                  timestamp, and optional reject reason on the session audit
+                  trail.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-semibold text-opal-main">
+                  Audit trail limit
+                </dt>
+                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
+                  Events are an in-memory demo trail for the current run - not
+                  an immutable or durable store.
+                </dd>
+              </div>
+            </dl>
+          </div>
+        }
+        architectureVisual={<WorkflowArchitectureFlow />}
+        architecture="UI starts a scenario. /api/workflow runs a TypeScript in-process state machine with an in-memory interrupt checkpoint; Approve request / Reject request resumes or stops the run. LangGraph and Postgres checkpoint config in the repo is reference only for this hosted demo."
         tradeoffs={[
-          "In-memory demo checkpoints - fine for a portfolio run, not durable across deploys.",
-          "Mockup over a full graph/Postgres stack on Vercel - avoids fake claims and keeps hosting simple.",
-          "Threshold gate is explicit and visible; a production queue or timeout layer would sit behind the same UI pattern.",
+          "Deterministic TypeScript routing fits this fixed money gate - clearer than an open-ended planner for a single threshold interrupt.",
+          "In-memory demo checkpoints - fine for a portfolio run, not durable across deploys or multiple instances.",
+          "A durable graph or checkpoint runtime (for example LangGraph with Postgres) can be added when approvals must survive restarts or span instances; that path is config/reference here, not the public runtime.",
         ]}
         stack="TypeScript, Next.js, SSE"
         isRunning={isRunning}
@@ -257,7 +295,7 @@ export default function WorkflowPage() {
                   {
                     label: "ID",
                     value: (
-                      <span className="font-mono text-[12px]">
+                      <span className="font-mono text-xs">
                         {request.requestId}
                       </span>
                     ),
@@ -272,58 +310,63 @@ export default function WorkflowPage() {
                         : "N/A",
                     emphasize: request.amount != null,
                   },
+                  {
+                    label: "Threshold",
+                    value: `$${FINANCIAL_THRESHOLD_USD.toLocaleString()}`,
+                  },
                 ]}
               />
             </div>
 
             {needsApproval ? (
-              <div className="border-t border-amber-200 pt-4 space-y-3">
-                <p className="label-opal">Manager review</p>
-                <p className="text-sm leading-relaxed text-opal-muted">
-                  Payout exceeds $
-                  {FINANCIAL_THRESHOLD_USD.toLocaleString()}. Approve to resume
-                  from the checkpoint, or Reject to stop.
-                </p>
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    disabled={deciding}
-                    onClick={() => handleDecision("approve")}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
-                  >
-                    <Check className="h-4 w-4" />
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    disabled={deciding}
-                    onClick={() => handleDecision("reject")}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-700 px-3 py-2.5 text-sm font-semibold text-white hover:bg-rose-800 disabled:opacity-50"
-                  >
-                    <X className="h-4 w-4" />
-                    Reject
-                  </button>
+              <div className="space-y-3 border-t border-line pt-4">
+                <p className="label-opal">Operations manager review</p>
+                <div className="rounded-xl border border-warn/25 bg-warn-soft px-3.5 py-3">
+                  <p className="text-sm font-semibold text-opal-main">
+                    Frozen - amount vs threshold
+                  </p>
+                  <p className="mt-1.5 font-mono text-sm text-opal-main">
+                    ${(request.amount ?? 0).toLocaleString()} &gt; $
+                    {FINANCIAL_THRESHOLD_USD.toLocaleString()}
+                  </p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-opal-muted">
+                    Use Approve / Reject in the operations console on the right
+                    to resume or stop the run.
+                  </p>
                 </div>
               </div>
             ) : null}
 
             {showImpact && !needsApproval ? (
               <ResultStrip>
-                <p className="label-opal mb-1">Result</p>
+                <p className="label-opal mb-1">Run status</p>
                 <ResultRow
-                  label="Status"
-                  value={<Badge tone={flow.tone}>{flow.statusLabel}</Badge>}
+                  label="Current state"
+                  value={
+                    <span className="font-mono text-xs">
+                      {run.currentState}
+                    </span>
+                  }
                 />
-                {flow.lastNode ? (
-                  <ResultRow label="Step" value={flow.lastNode} />
-                ) : null}
+                <ResultRow label="Threshold" value={thresholdDisplay} />
+                <ResultRow label="Manager decision" value={managerDisplay} />
+                <ResultRow
+                  label="Final status"
+                  value={
+                    <Badge tone={statusTone(run.finalStatus)}>
+                      {run.finalStatus}
+                    </Badge>
+                  }
+                />
               </ResultStrip>
             ) : null}
 
             <DemoPrimaryButton
               label="Start workflow"
               busyLabel={
-                needsApproval ? "Waiting for manager..." : "Running workflow..."
+                needsApproval
+                  ? "Waiting for operations manager..."
+                  : "Running workflow..."
               }
               isRunning={isRunning}
               onClick={handleRun}
@@ -338,11 +381,11 @@ export default function WorkflowPage() {
             deciding={deciding}
             liveLabel={WORKFLOW_FRAMING}
             onApprove={() => handleDecision("approve")}
-            onReject={() => handleDecision("reject")}
+            onReject={(reason) => handleDecision("reject", reason)}
             onClear={() => setLogs([])}
           />
         }
       />
-    </div>
+    </main>
   );
 }

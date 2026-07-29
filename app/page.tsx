@@ -10,12 +10,8 @@ const PROJECTS = [
     mark: "PF",
     accent: "purple" as const,
     framing: PAYFLOW_FRAMING,
-    challenge:
-      "Manual invoice checks take hours, and a slightly altered routing number can send money to the wrong account before anyone catches it.",
-    solution:
-      "An invoice verification path that matches vendors to the registry, checks bank routing against approved profiles, and holds mismatched payouts.",
-    impact:
-      "Replaces manual keying of every invoice check - bad vendor or routing is held before money moves, with a clear path for AP review.",
+    summary: "Vendor and bank verification before an invoice can be paid.",
+    outcome: "Changed routing and unknown vendors stop before money moves.",
     tech: ["Python", "FastMCP", "Next.js"],
     demoHref: "/payflow",
     codeHref: `${site.githubRepo}/blob/main/mcp-server/payflow_server.py`,
@@ -23,14 +19,10 @@ const PROJECTS = [
   {
     title: "Client Migration Pipeline",
     mark: "CM",
-    accent: "amber" as const,
+    accent: "teal" as const,
     framing: MIGRATE_FRAMING,
-    challenge:
-      "Messy client spreadsheets break schemas, delay go-live, and leave ops cleaning data by hand.",
-    solution:
-      "A migration walkthrough that validates types, fixes formatting issues, simulates an isolated client schema, and reports success or hold.",
-    impact:
-      "Turns messy client sheets into a controlled cutover path so onboarding does not stall on broken imports.",
+    summary: "A controlled path from messy client files to isolated schemas.",
+    outcome: "Bad data is cleaned or held before it can derail onboarding.",
     tech: ["TypeScript", "Next.js", "SSE"],
     demoHref: "/migrate",
     codeHref: `${site.githubRepo}/blob/main/lib/migrate/engine.ts`,
@@ -38,14 +30,10 @@ const PROJECTS = [
   {
     title: "Workflow & Approvals",
     mark: "WA",
-    accent: "rose" as const,
+    accent: "shell" as const,
     framing: WORKFLOW_FRAMING,
-    challenge:
-      "Multi-site requests stall in email, and high-value steps can move without a clear manager sign-off.",
-    solution:
-      "A step-by-step runner that handles routine work, then pauses above $10,000 until a manager approves or rejects.",
-    impact:
-      "Routine work proceeds; high-risk spend stops for an explicit manager decision instead of dying in email.",
+    summary: "Automated workflows with explicit checkpoints for risky spend.",
+    outcome: "Routine work continues; requests over $10,000 wait for approval.",
     tech: ["TypeScript", "Next.js", "SSE"],
     demoHref: "/workflow",
     codeHref: `${site.githubRepo}/blob/main/lib/workflow/state-machine.ts`,
@@ -55,195 +43,225 @@ const PROJECTS = [
 const DELIVER_AREAS = [
   {
     title: "End-to-End Enterprise Operations & ERP Platforms",
-    body: "Owning the complete digital core - CRM, sales, vendor pipelines, payroll, and accounting - replacing fragmented spreadsheets with unified platforms that scale operating capacity (e.g., 2.5x capacity with zero headcount expansion).",
+    body: "Unify CRM, sales, vendors, payroll, and accounting into one operating platform.",
   },
   {
     title: "Cross-Functional Systems Integration",
-    body: "Connecting disconnected SaaS tools and legacy data streams so marketing, finance, and operations all run on a single source of truth.",
+    body: "Connect SaaS tools and legacy data so teams work from one source of truth.",
   },
   {
     title: "Data Migration & Multi-Tenant Architecture",
-    body: "Leading massive migrations and onboarding pipelines (such as 3,000+ customer onboardings and thousands of enterprise accounts) without service disruption.",
+    body: "Move large customer datasets into isolated, scalable environments safely.",
   },
   {
     title: "Governed AI & Workflow Automation",
-    body: "Deploying AI and automated workflows with built-in safety rails - such as mandatory manager sign-offs and auditable trails - so automation solves problems instead of creating risks.",
+    body: "Automate routine work while keeping human approval at high-risk decisions.",
   },
   {
     title: "Operational Standardization & Enablement",
-    body: "Building the reusable SOP libraries, templates, and compliance frameworks that keep multi-site operations (across 400+ locations) consistent and inspection-ready.",
+    body: "Create reusable SOPs and controls that keep multi-site operations consistent.",
   },
   {
     title: "Operator-Grade System Design",
-    body: "Building software from firsthand experience running physical operations, managing compliance, and handling day-to-day team usage - so the systems actually hold up when real people use them.",
+    body: "Design around how people actually work, not how a process looks on paper.",
   },
 ] as const;
 
 const accentStyles = {
   purple: {
-    border: "border-l-opal-purple",
-    mark: "bg-violet-50 text-opal-purple",
-    label: "text-opal-purple",
+    mark: "bg-accent-soft text-accent-deep",
+    label: "text-accent",
   },
-  amber: {
-    border: "border-l-opal-amber",
-    mark: "bg-amber-50 text-opal-amber",
-    label: "text-opal-amber",
+  teal: {
+    mark: "bg-ok-soft text-ok",
+    label: "text-ok",
   },
-  rose: {
-    border: "border-l-opal-rose",
-    mark: "bg-rose-50 text-opal-rose",
-    label: "text-opal-rose",
+  shell: {
+    mark: "bg-danger-soft text-danger",
+    label: "text-danger",
   },
 } as const;
 
 export default function HomePage() {
   return (
     <main className="relative z-10">
-      <section className="mx-auto max-w-3xl px-6 pt-20 pb-20 text-center sm:pt-28 sm:pb-24">
-        <p>
-          <span className="eyebrow-opal">{site.role}</span>
-        </p>
+      <section className="mx-auto max-w-6xl px-5 pb-8 pt-9 sm:px-6 sm:pb-12 sm:pt-16 lg:px-8">
+        <div className="grid items-end gap-6 sm:gap-8 lg:grid-cols-[1.35fr_0.65fr] lg:gap-14">
+          <div>
+            <p className="eyebrow-opal">
+              {site.name} · {site.role}
+            </p>
+            <h1 className="mt-3 max-w-3xl font-display text-[34px] font-semibold leading-[1.08] tracking-[-0.035em] text-opal-main sm:mt-4 sm:text-5xl">
+              Systems that make complex operations feel simple.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-opal-muted sm:mt-5 sm:text-[17px]">
+              I architect ERP platforms, integrations, and governed automation
+              that replace fragmented tools with systems people can trust.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-6">
+              <a href="#projects" className="btn-primary">
+                View selected work
+              </a>
+              <a
+                href={contactMailto}
+                className="inline-flex h-9 items-center text-sm font-semibold text-accent-deep underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                Start a conversation
+              </a>
+            </div>
+          </div>
 
-        <h1 className="mt-4 font-display text-4xl font-medium tracking-tight text-opal-main sm:text-5xl lg:text-6xl">
-          {site.name}
-        </h1>
-
-        <p className="mx-auto mt-8 max-w-2xl text-[17px] leading-relaxed text-opal-main sm:text-lg">
-          I build the business systems companies run on - ERP platforms,
-          integrations, and automated workflows, with AI built in where it
-          earns its place under human oversight. Ten years turning fragmented
-          tools and manual process into platforms people trust.
-        </p>
-
-        <p className="mx-auto mt-6 max-w-2xl text-[15px] leading-relaxed text-opal-muted sm:text-base">
-          Before I architected systems, I ran one - every day, on the ground,
-          accountable for the people, the compliance, and the numbers, not just
-          the software. That&apos;s the difference you can feel in what I build:
-          it&apos;s made by someone who&apos;s had to actually use it.
-        </p>
-
-        <p className="mt-8">
-          <a
-            href={contactMailto}
-            className="text-[15px] font-medium text-opal-violet underline-offset-4 hover:underline sm:text-base"
-          >
-            {site.email}
-          </a>
-        </p>
-      </section>
-
-      <section
-        id="where-i-deliver"
-        className="mx-auto max-w-5xl scroll-mt-24 px-6 pb-20 sm:pb-24"
-      >
-        <div className="mb-12 text-center sm:text-left">
-          <h2 className="font-display text-2xl font-medium tracking-tight text-opal-main sm:text-3xl">
-            Where I Deliver
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {DELIVER_AREAS.map((area) => (
-            <article
-              key={area.title}
-              className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm sm:p-7"
-            >
-              <h3 className="font-display text-lg font-medium tracking-tight text-opal-main sm:text-xl">
-                {area.title}
-              </h3>
-              <p className="mt-3 text-[15px] leading-relaxed text-opal-muted sm:text-base">
-                {area.body}
-              </p>
-            </article>
-          ))}
+          <dl className="grid grid-cols-3 divide-x divide-line border-y border-line py-4 lg:grid-cols-1 lg:divide-x-0 lg:divide-y lg:border-y-0 lg:border-l lg:py-0 lg:pl-7">
+            <div className="px-3 first:pl-0 lg:px-0 lg:py-3 lg:first:pt-0">
+              <dt className="font-display text-xl font-semibold text-opal-main">
+                10 years
+              </dt>
+              <dd className="mt-0.5 text-xs leading-snug text-opal-muted sm:text-sm">
+                building from operational reality
+              </dd>
+            </div>
+            <div className="px-3 lg:px-0 lg:py-3">
+              <dt className="font-display text-xl font-semibold text-opal-main">
+                3 demos
+              </dt>
+              <dd className="mt-0.5 text-xs leading-snug text-opal-muted sm:text-sm">
+                showing systems, not slides
+              </dd>
+            </div>
+            <div className="px-3 pr-0 lg:px-0 lg:py-3 lg:last:pb-0">
+              <dt className="font-display text-xl font-semibold text-opal-main">
+                Human-led
+              </dt>
+              <dd className="mt-0.5 text-xs leading-snug text-opal-muted sm:text-sm">
+                controls where risk matters
+              </dd>
+            </div>
+          </dl>
         </div>
       </section>
 
       <section
         id="projects"
-        className="mx-auto max-w-3xl scroll-mt-24 px-6 pb-28"
+        className="mx-auto max-w-6xl scroll-mt-24 px-5 pb-16 pt-4 sm:px-6 lg:px-8"
       >
-        <div className="mb-12">
-          <p className="label-opal">Selected work</p>
-          <h2 className="mt-3 font-display text-2xl font-medium tracking-tight text-opal-main sm:text-3xl">
-            Case Studies
-          </h2>
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="label-opal">Selected work</p>
+            <h2 className="mt-1.5 font-display text-2xl font-semibold tracking-tight text-opal-main">
+              Systems you can explore
+            </h2>
+          </div>
+          <p className="hidden max-w-md text-sm text-opal-muted sm:block">
+            Three compact case studies with working demos and source.
+          </p>
         </div>
 
-        <div className="flex flex-col gap-10">
+        <div className="grid gap-4 md:grid-cols-3">
           {PROJECTS.map((project) => {
             const styles = accentStyles[project.accent];
             return (
               <article
                 key={project.demoHref}
-                className={`rounded-2xl border border-slate-200/90 border-l-4 ${styles.border} bg-white p-6 shadow-sm sm:p-8`}
+                className="card-opal card-opal-interactive flex min-h-[285px] flex-col p-5"
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-center justify-between gap-3">
                   <span
-                    className={`mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-mono text-[11px] font-semibold tracking-wide ${styles.mark}`}
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-lg font-mono text-[11px] font-semibold ${styles.mark}`}
                     aria-hidden
                   >
                     {project.mark}
                   </span>
-                  <div className="min-w-0">
-                    <p
-                      className={`font-mono text-[10px] font-medium uppercase tracking-[0.14em] ${styles.label}`}
-                    >
-                      {project.framing}
-                    </p>
-                    <h3 className="mt-1 font-display text-xl font-medium tracking-tight text-opal-main sm:text-2xl">
-                      {project.title}
-                    </h3>
-                  </div>
+                  <p
+                    className={`text-[11px] font-semibold uppercase tracking-[0.06em] ${styles.label}`}
+                  >
+                    {project.framing}
+                  </p>
                 </div>
 
-                <dl className="mt-6 space-y-5">
-                  <div>
-                    <dt className="label-opal">Challenge</dt>
-                    <dd className="mt-2 text-[15px] leading-relaxed text-opal-muted sm:text-base">
-                      {project.challenge}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="label-opal">Solution</dt>
-                    <dd className="mt-2 text-[15px] leading-relaxed text-opal-muted sm:text-base">
-                      {project.solution}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="label-opal">Impact</dt>
-                    <dd className="mt-2 text-[15px] leading-relaxed text-opal-muted sm:text-base">
-                      {project.impact}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="label-opal">Tech Stack</dt>
-                    <dd className="mt-2 text-[15px] leading-relaxed text-opal-label sm:text-base">
-                      {project.tech.join(", ")}
-                    </dd>
-                  </div>
-                </dl>
+                <h3 className="mt-5 font-display text-xl font-semibold tracking-tight text-opal-main">
+                  {project.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-opal-muted">
+                  {project.summary}
+                </p>
 
-                <div className="mt-8 flex flex-wrap items-center gap-3">
-                  <Link
-                    href={project.demoHref}
-                    className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-opal-purple to-opal-violet px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition-shadow hover:shadow-violet-500/30"
-                  >
-                    Open the demo
-                  </Link>
-                  <a
-                    href={project.codeHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center rounded-xl border border-opal-purple/40 bg-white px-6 py-3 text-sm font-semibold text-opal-purple transition-colors hover:border-opal-purple hover:bg-violet-50"
-                  >
-                    Read the code
-                  </a>
+                <div className="mt-4 border-t border-line pt-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-opal-label">
+                    Outcome
+                  </p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-opal-main">
+                    {project.outcome}
+                  </p>
+                </div>
+
+                <div className="mt-auto pt-5">
+                  <p className="mb-3 text-xs text-opal-muted">
+                    {project.tech.join(" · ")}
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <Link
+                      href={project.demoHref}
+                      className="inline-flex h-9 items-center rounded-xl bg-accent px-3.5 text-sm font-semibold text-white transition-colors hover:bg-accent-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                    >
+                      View demo
+                    </Link>
+                    <a
+                      href={project.codeHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-9 items-center text-sm font-semibold text-accent-deep underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      Source ↗
+                    </a>
+                  </div>
                 </div>
               </article>
             );
           })}
+        </div>
+      </section>
+
+      <section
+        aria-label="Operator perspective"
+        className="mx-auto max-w-6xl px-5 pb-14 sm:px-6 lg:px-8"
+      >
+        <div className="grid gap-3 border-y border-line py-6 sm:grid-cols-[180px_1fr] sm:items-start">
+          <p className="label-opal">Operator perspective</p>
+          <p className="max-w-3xl text-[15px] leading-relaxed text-opal-muted">
+            Before I architected systems, I ran one—accountable for the people,
+            compliance, and numbers, not just the software. I build for the
+            people who have to use the system when the day gets messy.
+          </p>
+        </div>
+      </section>
+
+      <section
+        id="where-i-deliver"
+        className="mx-auto max-w-6xl scroll-mt-24 px-5 pb-20 sm:px-6 lg:px-8"
+      >
+        <div className="mb-6">
+          <p className="label-opal">Capabilities</p>
+          <h2 className="mt-1.5 font-display text-2xl font-semibold tracking-tight text-opal-main">
+            Where I deliver
+          </h2>
+        </div>
+
+        <div className="grid border-t border-line sm:grid-cols-2">
+          {DELIVER_AREAS.map((area, index) => (
+            <article
+              key={area.title}
+              className={`border-b border-line py-5 sm:px-5 ${
+                index % 2 === 0 ? "sm:border-r sm:pl-0" : "sm:pr-0"
+              }`}
+            >
+              <h3 className="font-display text-base font-semibold text-opal-main">
+                {area.title}
+              </h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-opal-muted">
+                {area.body}
+              </p>
+            </article>
+          ))}
         </div>
       </section>
     </main>

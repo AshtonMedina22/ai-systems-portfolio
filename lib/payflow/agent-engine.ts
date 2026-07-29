@@ -5,10 +5,18 @@ import { LogEntry } from "@/components/ui/TerminalStream";
 import { DEFAULT_MCP_URL, isMcpServerReachable } from "./mcp-client";
 import {
   DEMO_MCP_TOOLS,
+  getVendorApprovedProfile,
   toolCheckBankRouting,
   toolPostErpLedger,
   toolVerifyVendorEntity,
 } from "./mcp-tools";
+import {
+  createBankMismatchHold,
+  getHold,
+  markHoldReleased,
+  rejectHold,
+  type PayFlowHold,
+} from "./holds";
 
 export type PayflowMcpMode = "auto" | "embedded" | "http";
 
@@ -52,6 +60,10 @@ function createLogEntry(
 }
 
 function sleep(ms: number) {
+  // Deterministic CI / golden SSE tests skip demo pacing delays.
+  if (process.env.PAYFLOW_TEST_FAST === "1") {
+    return Promise.resolve();
+  }
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -106,7 +118,29 @@ function createLocalToolRunner(): ToolRunner {
         invoiceId: String(args.invoiceId),
         vendorId: String(args.vendorId),
         amount: Number(args.amount),
+        currency:
+          typeof args.currency === "string" ? args.currency : undefined,
+        vendorEvidenceToken:
+          typeof args.vendorEvidenceToken === "string"
+            ? args.vendorEvidenceToken
+            : undefined,
+        bankEvidenceToken:
+          typeof args.bankEvidenceToken === "string"
+            ? args.bankEvidenceToken
+            : undefined,
+        vendorName:
+          typeof args.vendorName === "string" ? args.vendorName : undefined,
+        taxId: typeof args.taxId === "string" ? args.taxId : undefined,
+        routingNumber:
+          typeof args.routingNumber === "string"
+            ? args.routingNumber
+            : undefined,
+        accountNumber:
+          typeof args.accountNumber === "string"
+            ? args.accountNumber
+            : undefined,
       });
+      if (res.error) throw new Error(res.error.message);
       return res.result?.content[0]?.json ?? {};
     }
     throw new Error(`Unknown local tool: ${name}`);
@@ -127,7 +161,9 @@ function createMcpToolRunner(client: Client): ToolRunner {
       throw new Error(
         typeof parsed.message === "string"
           ? parsed.message
-          : `MCP tool ${name} returned isError`
+          : typeof parsed.text === "string"
+            ? parsed.text
+            : `MCP tool ${name} returned isError`
       );
     }
     return parsed;
@@ -224,7 +260,7 @@ async function* runWorkflow(
     yield createLogEntry(
       "warning",
       source,
-      "Payment stopped. Unknown vendor needs a person to review before any payout."
+      "Payment stopped. Unknown or low-confidence vendor needs AP manager review before any payout."
     );
     return;
   }
@@ -277,14 +313,37 @@ async function* runWorkflow(
 
     await sleep(350);
 
+    const profile = getVendorApprovedProfile(String(vendorResultContent.vendorId));
+    const hold = createBankMismatchHold({
+      invoice,
+      vendorId: String(vendorResultContent.vendorId),
+      officialName:
+        typeof vendorResultContent.officialName === "string"
+          ? vendorResultContent.officialName
+          : profile?.officialName ?? "Unknown",
+      expectedRouting:
+        typeof bankResultContent.expectedRouting === "string"
+          ? bankResultContent.expectedRouting
+          : profile?.approvedRoutingNumber ?? "",
+      expectedAccount:
+        typeof bankResultContent.expectedAccount === "string"
+          ? bankResultContent.expectedAccount
+          : profile?.approvedAccountNumber ?? "",
+    });
+
     yield createLogEntry(
       "error",
       source,
-      `Payment of $${invoice.invoiceAmount.toLocaleString()} held. Routing change flagged for manager review.`,
+      `Payment of $${invoice.invoiceAmount.toLocaleString()} held. Routing change flagged for AP manager review.`,
       {
-        action: "ESCALATE_TO_COMPLIANCE",
+        action: "HOLD_OPENED",
+        holdId: hold.id,
+        reviewerRole: "AP manager",
         flaggedReason: "UNAUTHORIZED_BANK_ROUTING_CHANGE",
         riskScore: bankResultContent.riskScore,
+        expectedRouting: hold.expectedRouting,
+        expectedAccount: hold.expectedAccount,
+        storageNote: hold.storageNote,
       }
     );
     return;
@@ -299,28 +358,74 @@ async function* runWorkflow(
 
   await sleep(400);
 
+  const vendorEvidenceToken =
+    typeof vendorResultContent.evidenceToken === "string"
+      ? vendorResultContent.evidenceToken
+      : "";
+  const bankEvidenceToken =
+    typeof bankResultContent.evidenceToken === "string"
+      ? bankResultContent.evidenceToken
+      : "";
+
   const ledgerArgs = {
     invoiceId: invoice.invoiceId,
     vendorId: String(vendorResultContent.vendorId),
     amount: invoice.invoiceAmount,
     currency: "USD",
+    vendorEvidenceToken,
+    bankEvidenceToken,
+    vendorName: invoice.vendorName,
+    taxId: invoice.vendorTaxId,
+    routingNumber: invoice.bankDetails.routingNumber,
+    accountNumber: invoice.bankDetails.accountNumber,
   };
 
   yield createLogEntry(
     "tool_call",
     transportLabel,
-    `Posting invoice ${ledgerArgs.invoiceId} to the AP ledger...`,
+    `Posting invoice ${ledgerArgs.invoiceId} to the AP ledger (evidence-gated)...`,
     {
       method: "tools/call",
       tool: "post_erp_ledger",
-      arguments: ledgerArgs,
+      arguments: {
+        invoiceId: ledgerArgs.invoiceId,
+        vendorId: ledgerArgs.vendorId,
+        amount: ledgerArgs.amount,
+        hasVendorEvidence: Boolean(vendorEvidenceToken),
+        hasBankEvidence: Boolean(bankEvidenceToken),
+      },
       jsonrpc: "2.0",
     }
   );
 
   await sleep(500);
 
-  const ledgerResult = await callTool("post_erp_ledger", ledgerArgs);
+  let ledgerResult: Record<string, unknown>;
+  try {
+    ledgerResult = await callTool("post_erp_ledger", ledgerArgs);
+  } catch (err) {
+    yield createLogEntry(
+      "error",
+      "mcp:erp_ledger",
+      err instanceof Error
+        ? err.message
+        : "Ledger post rejected by evidence gate.",
+      { action: "POST_REJECTED" }
+    );
+    return;
+  }
+
+  if (ledgerResult.posted === false || ledgerResult.error) {
+    yield createLogEntry(
+      "error",
+      "mcp:erp_ledger",
+      typeof ledgerResult.message === "string"
+        ? ledgerResult.message
+        : "Ledger post rejected by evidence gate.",
+      ledgerResult
+    );
+    return;
+  }
 
   yield createLogEntry(
     "tool_result",
@@ -478,4 +583,311 @@ export async function* runPayFlowAgentEngine(
       // ignore teardown errors
     }
   }
+}
+
+export type HoldRejectResult =
+  | { ok: true; hold: PayFlowHold; logs: LogEntry[] }
+  | { ok: false; error: string };
+
+export function rejectPayFlowHold(
+  holdId: string,
+  reason: string
+): HoldRejectResult {
+  const result = rejectHold(holdId, reason);
+  if (!result.ok) return result;
+
+  const logs: LogEntry[] = [
+    createLogEntry(
+      "warning",
+      "hold:ap_manager",
+      `AP manager rejected hold ${holdId}. Payment will not post.`,
+      {
+        action: "HOLD_REJECTED",
+        holdId,
+        reviewerRole: "AP manager",
+        reason: result.hold.resolutionReason,
+        resolvedAt: result.hold.updatedAt,
+        audit: result.hold.audit,
+      }
+    ),
+  ];
+  return { ok: true, hold: result.hold, logs };
+}
+
+export type HoldReleaseInput = {
+  holdId: string;
+  reason: string;
+  /** Must match the approved profile routing for the held vendor. */
+  correctedRouting: string;
+  correctedAccount?: string;
+};
+
+/**
+ * AP manager supplies corrected approved routing, both checks re-run,
+ * fresh evidence is issued, then the ledger posts. Casual approve is not allowed.
+ */
+export async function* releasePayFlowHold(
+  input: HoldReleaseInput,
+  options: AgentExecutionOptions = {}
+): AsyncGenerator<LogEntry, PayFlowHold | null, unknown> {
+  const hold = getHold(input.holdId);
+  if (!hold) {
+    yield createLogEntry(
+      "error",
+      "hold:ap_manager",
+      "Hold not found in demo/session storage.",
+      { holdId: input.holdId }
+    );
+    return null;
+  }
+  if (hold.status !== "open") {
+    yield createLogEntry(
+      "error",
+      "hold:ap_manager",
+      `Hold is already ${hold.status}.`,
+      { holdId: hold.id, status: hold.status }
+    );
+    return null;
+  }
+
+  const reason = input.reason.trim();
+  if (!reason) {
+    yield createLogEntry(
+      "error",
+      "hold:ap_manager",
+      "A release reason is required.",
+      { holdId: hold.id }
+    );
+    return null;
+  }
+
+  const profile = getVendorApprovedProfile(hold.vendorId);
+  if (!profile) {
+    yield createLogEntry(
+      "error",
+      "hold:ap_manager",
+      "Vendor profile not found for this hold.",
+      { vendorId: hold.vendorId }
+    );
+    return null;
+  }
+
+  const correctedRouting = input.correctedRouting.trim();
+  const correctedAccount = (
+    input.correctedAccount?.trim() || profile.approvedAccountNumber
+  ).trim();
+
+  if (correctedRouting !== profile.approvedRoutingNumber) {
+    yield createLogEntry(
+      "error",
+      "hold:ap_manager",
+      "Corrected routing must match the approved vendor payment profile. Casual approval cannot bypass the bank control.",
+      {
+        holdId: hold.id,
+        submittedCorrection: correctedRouting,
+        approvedRouting: profile.approvedRoutingNumber,
+      }
+    );
+    return null;
+  }
+
+  if (correctedAccount !== profile.approvedAccountNumber) {
+    yield createLogEntry(
+      "error",
+      "hold:ap_manager",
+      "Corrected account must match the approved vendor payment profile.",
+      {
+        holdId: hold.id,
+        approvedAccount: profile.approvedAccountNumber,
+      }
+    );
+    return null;
+  }
+
+  yield createLogEntry(
+    "info",
+    "hold:ap_manager",
+    "AP manager supplied corrected approved routing. Re-running vendor and bank checks before any ledger post.",
+    {
+      holdId: hold.id,
+      correctedRouting,
+      reviewerRole: "AP manager",
+      reason,
+    }
+  );
+
+  const correctedInvoice: InvoicePayload = {
+    ...hold.invoice,
+    bankDetails: {
+      ...hold.invoice.bankDetails,
+      routingNumber: correctedRouting,
+      accountNumber: correctedAccount,
+      bankName: hold.invoice.bankDetails.bankName,
+    },
+  };
+
+  // Always use embedded tools for hold resolution so evidence lives in the
+  // same process as the hold store (demo/session storage on Vercel).
+  const callTool = createLocalToolRunner();
+  const transportLabel = "mcp:embedded_demo";
+  const source = "agent:payflow";
+
+  void options;
+
+  const verifyArgs = {
+    vendorName: correctedInvoice.vendorName,
+    taxId: correctedInvoice.vendorTaxId,
+  };
+
+  yield createLogEntry(
+    "tool_call",
+    transportLabel,
+    `Re-checking vendor registry for "${correctedInvoice.vendorName}"...`,
+    { tool: "verify_vendor_entity", arguments: verifyArgs }
+  );
+
+  await sleep(300);
+  const vendorResult = await callTool("verify_vendor_entity", verifyArgs);
+
+  if (vendorResult.status === "UNREGISTERED_ENTITY") {
+    yield createLogEntry(
+      "error",
+      "mcp:registry_check",
+      "Vendor re-check failed. Hold remains open.",
+      vendorResult
+    );
+    return null;
+  }
+
+  yield createLogEntry(
+    "tool_result",
+    "mcp:fuzzy_match",
+    `Vendor re-check passed for ${vendorResult.vendorId}.`,
+    vendorResult
+  );
+
+  const bankArgs = {
+    vendorId: String(vendorResult.vendorId),
+    routingNumber: correctedRouting,
+    accountNumber: correctedAccount,
+  };
+
+  yield createLogEntry(
+    "tool_call",
+    transportLabel,
+    "Re-checking bank routing against approved profile...",
+    { tool: "check_bank_routing", arguments: bankArgs }
+  );
+
+  await sleep(300);
+  const bankResult = await callTool("check_bank_routing", bankArgs);
+
+  if (!bankResult.isMatch) {
+    yield createLogEntry(
+      "error",
+      "mcp:anti_fraud_rules",
+      "Bank re-check failed. Hold remains open - control was not bypassed.",
+      bankResult
+    );
+    return null;
+  }
+
+  yield createLogEntry(
+    "tool_result",
+    "mcp:anti_fraud_rules",
+    "Bank re-check passed with corrected approved routing.",
+    bankResult
+  );
+
+  const ledgerArgs = {
+    invoiceId: correctedInvoice.invoiceId,
+    vendorId: String(vendorResult.vendorId),
+    amount: correctedInvoice.invoiceAmount,
+    currency: "USD",
+    vendorEvidenceToken: String(vendorResult.evidenceToken ?? ""),
+    bankEvidenceToken: String(bankResult.evidenceToken ?? ""),
+    vendorName: correctedInvoice.vendorName,
+    taxId: correctedInvoice.vendorTaxId,
+    routingNumber: correctedRouting,
+    accountNumber: correctedAccount,
+  };
+
+  yield createLogEntry(
+    "tool_call",
+    transportLabel,
+    "Posting with fresh verification evidence...",
+    {
+      tool: "post_erp_ledger",
+      invoiceId: ledgerArgs.invoiceId,
+      hasVendorEvidence: Boolean(ledgerArgs.vendorEvidenceToken),
+      hasBankEvidence: Boolean(ledgerArgs.bankEvidenceToken),
+    }
+  );
+
+  await sleep(300);
+
+  let ledgerResult: Record<string, unknown>;
+  try {
+    ledgerResult = await callTool("post_erp_ledger", ledgerArgs);
+  } catch (err) {
+    yield createLogEntry(
+      "error",
+      "mcp:erp_ledger",
+      err instanceof Error
+        ? err.message
+        : "Ledger post rejected after hold release attempt.",
+      { action: "POST_REJECTED" }
+    );
+    return null;
+  }
+
+  if (ledgerResult.posted !== true) {
+    yield createLogEntry(
+      "error",
+      "mcp:erp_ledger",
+      typeof ledgerResult.message === "string"
+        ? ledgerResult.message
+        : "Ledger post rejected after hold release attempt.",
+      ledgerResult
+    );
+    return null;
+  }
+
+  const released = markHoldReleased(hold.id, {
+    reason,
+    correctedRouting,
+    correctedAccount,
+    ledgerEntryId: String(ledgerResult.ledgerEntryId),
+  });
+
+  if (!released.ok) {
+    yield createLogEntry("error", "hold:ap_manager", released.error, {
+      holdId: hold.id,
+    });
+    return null;
+  }
+
+  yield createLogEntry(
+    "tool_result",
+    "mcp:erp_ledger",
+    `Posted ledger entry ${ledgerResult.ledgerEntryId} for invoice #${correctedInvoice.invoiceId}`,
+    ledgerResult
+  );
+
+  yield createLogEntry(
+    "success",
+    source,
+    `Hold ${hold.id} released by AP manager after corrected routing re-check. Invoice posted.`,
+    {
+      action: "HOLD_RELEASED",
+      holdId: hold.id,
+      reviewerRole: "AP manager",
+      reason,
+      resolvedAt: released.hold.updatedAt,
+      ledgerEntryId: ledgerResult.ledgerEntryId,
+      audit: released.hold.audit,
+    }
+  );
+
+  return released.hold;
 }

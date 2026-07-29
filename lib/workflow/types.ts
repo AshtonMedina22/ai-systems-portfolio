@@ -11,6 +11,9 @@ export type WorkflowNodeId =
 
 export type WorkflowDecision = "approve" | "reject";
 
+/** Reviewer role shown in the public demo UI and session audit trail. */
+export const WORKFLOW_REVIEWER_ROLE = "operations manager" as const;
+
 export interface WorkflowRequest {
   requestId: string;
   title: string;
@@ -27,9 +30,12 @@ export interface WorkflowAuditEntry {
   node: WorkflowNodeId;
   at: string;
   detail: string;
+  actor?: string;
+  decision?: WorkflowDecision;
+  reason?: string;
 }
 
-/** Payouts above this amount pause for manager sign-off. */
+/** Payouts above this amount pause for operations manager sign-off. */
 export const FINANCIAL_THRESHOLD_USD = 10_000;
 
 export const SAMPLE_WORKFLOWS: Record<WorkflowScenarioKey, WorkflowRequest> = {
@@ -43,7 +49,7 @@ export const SAMPLE_WORKFLOWS: Record<WorkflowScenarioKey, WorkflowRequest> = {
     requiresManagerSignOff: true,
     scenario: "contract_payout",
     summary:
-      "Vendor contract payout over $10,000 - should pause for manager sign-off before money moves.",
+      "Vendor contract payout over $10,000 - should pause for operations manager sign-off before money moves.",
   },
   inventory_realloc: {
     requestId: "WF-2026-0531",
@@ -55,6 +61,6 @@ export const SAMPLE_WORKFLOWS: Record<WorkflowScenarioKey, WorkflowRequest> = {
     requiresManagerSignOff: false,
     scenario: "inventory_realloc",
     summary:
-      "Moves stock between sites under the auto-transfer limit - should finish without a manager pause.",
+      "Moves stock between sites under the auto-transfer limit - should finish without an operations manager pause.",
   },
 };

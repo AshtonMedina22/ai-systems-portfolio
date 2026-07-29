@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 export interface GlassBoxProps {
   title: string;
@@ -74,7 +75,24 @@ export function GlassBox({
   );
 
   return (
-    <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+    <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+      <nav aria-label="Breadcrumb" className="mb-6">
+        <ol className="flex flex-wrap items-center gap-2 text-sm text-opal-muted">
+          <li>
+            <Link
+              href="/#projects"
+              className="font-medium text-accent transition-colors hover:text-accent-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              Case studies
+            </Link>
+          </li>
+          <li aria-hidden className="text-opal-mist">
+            /
+          </li>
+          <li className="font-medium text-opal-main">{title}</li>
+        </ol>
+      </nav>
+
       <header className="max-w-3xl">
         {framing || badge ? (
           <p className="eyebrow-opal mb-3">
@@ -83,21 +101,21 @@ export function GlassBox({
             {badge ? badge : null}
           </p>
         ) : null}
-        <h1 className="font-display text-3xl sm:text-4xl font-medium tracking-tight text-opal-main text-balance">
+        <h1 className="text-balance font-display text-3xl font-semibold tracking-tight text-opal-main sm:text-4xl">
           {title}
         </h1>
         {lead ? (
-          <p className="mt-3 text-[15px] leading-relaxed text-opal-muted sm:text-base">
+          <p className="mt-3 text-base leading-relaxed text-opal-muted sm:text-[17px]">
             {lead}
           </p>
         ) : null}
         {valueLine ? (
-          <p className="mt-3 text-[15px] leading-relaxed text-opal-main sm:text-base">
+          <p className="mt-3 text-base leading-relaxed text-opal-main sm:text-[17px]">
             {valueLine}
           </p>
         ) : null}
         {controlStatement ? (
-          <p className="mt-4 border-l-2 border-slate-300 pl-3.5 text-[14px] leading-relaxed text-opal-muted sm:text-[15px]">
+          <p className="mt-4 border-l-2 border-line-strong pl-3.5 text-[15px] leading-relaxed text-opal-muted">
             <span className="font-semibold text-opal-main">Control. </span>
             {controlStatement}
           </p>
@@ -107,7 +125,7 @@ export function GlassBox({
       {hasBrief ? (
         <section
           aria-label="Project brief"
-          className="mt-8 max-w-4xl border-t border-slate-200 pt-6"
+          className="mt-8 max-w-4xl border-t border-line pt-6"
         >
           <dl className="grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-8">
             {challengeText ? (
@@ -136,53 +154,62 @@ export function GlassBox({
             ) : null}
           </dl>
           {stack ? (
-            <p className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[13px]">
+            <p className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
               <span className="label-opal">Stack</span>
               <span className="text-opal-label">{stack}</span>
             </p>
           ) : null}
         </section>
       ) : stack ? (
-        <p className="mt-5 flex max-w-3xl flex-wrap items-baseline gap-x-3 gap-y-1 text-[13px]">
+        <p className="mt-5 flex max-w-3xl flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
           <span className="label-opal">Stack</span>
           <span className="text-opal-label">{stack}</span>
         </p>
       ) : null}
 
       {whenWrong ? (
-        <section
-          aria-label="What happens when it is wrong"
-          className="mt-8 max-w-4xl border-t border-slate-200 pt-6"
-        >
-          {whenWrong}
-        </section>
+        <details className="mt-8 max-w-4xl border-t border-line pt-6 open:pb-0">
+          <summary className="cursor-pointer list-none">
+            <span className="label-opal">What happens when it is wrong</span>
+            <span className="ml-2 text-sm text-opal-muted">
+              Hold / review path
+            </span>
+          </summary>
+          <div className="mt-4" aria-label="What happens when it is wrong">
+            {whenWrong}
+          </div>
+        </details>
       ) : null}
 
       {hasArch ? (
-        <section
-          aria-label="Architecture and trade-offs"
-          className="mt-8 max-w-4xl border-t border-slate-200 pt-6"
-        >
-          <p className="label-opal">Architecture</p>
-          {architectureVisual ? architectureVisual : null}
-          {architecture ? (
-            <p
-              className={`${architectureVisual ? "mt-4" : "mt-2"} max-w-3xl text-[15px] leading-relaxed text-opal-muted`}
-            >
-              {architecture}
-            </p>
-          ) : null}
-          {tradeoffs && tradeoffs.length > 0 ? (
-            <div className="mt-5">
-              <p className="label-opal">Trade-offs</p>
-              <ul className="mt-2 max-w-3xl list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-opal-muted">
-                {tradeoffs.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </section>
+        <details className="mt-8 max-w-4xl border-t border-line pt-6" open>
+          <summary className="cursor-pointer list-none">
+            <span className="label-opal">Architecture and trade-offs</span>
+          </summary>
+          <div
+            className="mt-4"
+            aria-label="Architecture and trade-offs"
+          >
+            {architectureVisual ? architectureVisual : null}
+            {architecture ? (
+              <p
+                className={`${architectureVisual ? "mt-4" : "mt-2"} max-w-3xl text-[15px] leading-relaxed text-opal-muted`}
+              >
+                {architecture}
+              </p>
+            ) : null}
+            {tradeoffs && tradeoffs.length > 0 ? (
+              <div className="mt-5">
+                <p className="label-opal">Trade-offs</p>
+                <ul className="mt-2 max-w-3xl list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-opal-muted">
+                  {tradeoffs.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </details>
       ) : null}
 
       {headerExtra ? <div className="mt-5 max-w-3xl">{headerExtra}</div> : null}
@@ -191,21 +218,21 @@ export function GlassBox({
         {framing ? (
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <p className="label-opal">{framing}</p>
-            <p className="text-[12px] text-opal-muted">
+            <p className="text-sm text-opal-muted">
               Controls left - live run or How it works on the right
             </p>
           </div>
         ) : null}
         <div
           data-running={isRunning}
-          className="workspace-shell grid grid-cols-1 overflow-hidden rounded-2xl bg-white lg:grid-cols-12 lg:min-h-[620px]"
+          className="workspace-shell grid grid-cols-1 overflow-hidden lg:grid-cols-12 lg:min-h-[620px]"
         >
-          <aside className="border-b border-slate-300 bg-white p-5 sm:p-6 lg:col-span-4 lg:border-b-0 lg:border-r lg:overflow-y-auto">
+          <aside className="border-b border-white/60 bg-white/48 p-5 backdrop-blur-xl sm:p-6 lg:col-span-4 lg:overflow-y-auto lg:border-b-0 lg:border-r">
             <h2 className="label-opal mb-4">{controlLabel}</h2>
             {controlPanel}
           </aside>
 
-          <section className="flex min-h-[440px] flex-col console-shell overflow-hidden lg:col-span-8">
+          <section className="console-shell flex min-h-[440px] flex-col overflow-hidden lg:col-span-8">
             {streamPanel}
           </section>
         </div>

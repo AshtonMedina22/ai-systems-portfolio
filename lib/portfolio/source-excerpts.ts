@@ -6,58 +6,25 @@ export const PAYFLOW_SOURCE_FILES: SourceFile[] = [
     name: "erp_registry.py",
     language: "python",
     kind: "runtime",
-    code: `# mcp-server/erp_registry.py - vendor match + bank routing checks
-from difflib import SequenceMatcher
+    code: `# mcp-server/erp_registry.py - evidence-gated ledger posting
+EVIDENCE_TTL_SECONDS = 300
 
-FUZZY_NAME_THRESHOLD = 0.82
+def verify_vendor_entity(vendor_name, tax_id):
+    # On MATCH_FOUND, issues single-use vendor evidence bound to name/tax/vendorId
+    ...
 
-def fuzzy_name_score(a: str, b: str) -> float:
-    return SequenceMatcher(None, a.lower().strip(), b.lower().strip()).ratio()
+def check_bank_routing(vendor_id, routing_number, account_number):
+    # On match, issues single-use bank evidence bound to vendor/routing/account
+    # On mismatch, no evidence token is issued
+    ...
 
-def verify_vendor_entity(vendor_name: str, tax_id: str) -> dict:
-    """Exact tax-ID match or fuzzy official-name match."""
-    tax_match = next((v for v in ERP_VENDOR_REGISTRY if v.tax_id == tax_id), None)
-    if tax_match:
-        name_score = fuzzy_name_score(vendor_name, tax_match.official_name)
-        return {
-            "status": "MATCH_FOUND",
-            "vendorId": tax_match.vendor_id,
-            "officialName": tax_match.official_name,
-            "nameSimilarity": round(name_score, 3),
-            "matchMethod": "TAX_ID_EXACT",
-        }
-
-    scored = [
-        (v, fuzzy_name_score(vendor_name, v.official_name))
-        for v in ERP_VENDOR_REGISTRY
-    ]
-    scored.sort(key=lambda item: item[1], reverse=True)
-    best, score = scored[0]
-
-    if score >= FUZZY_NAME_THRESHOLD:
-        return {
-            "status": "MATCH_FOUND",
-            "vendorId": best.vendor_id,
-            "nameSimilarity": round(score, 3),
-            "matchMethod": "FUZZY_NAME",
-        }
-
-    return {
-        "status": "UNREGISTERED_ENTITY",
-        "recommendation": "REJECT_PAYMENT_AND_FLAG",
-        "closestCandidate": best.official_name,
-    }
-
-def check_bank_routing(vendor_id: str, routing_number: str, account_number: str) -> dict:
-    record = next(v for v in ERP_VENDOR_REGISTRY if v.vendor_id == vendor_id)
-    if record.approved_routing_number != routing_number:
-        return {
-            "isMatch": False,
-            "riskLevel": "CRITICAL_FRAUD_ALERT",
-            "expectedRouting": record.approved_routing_number,
-            "message": "Routing does not match the approved payment profile.",
-        }
-    return {"isMatch": True, "riskLevel": "LOW", "riskScore": 0.02}
+def post_erp_ledger(invoice_id, vendor_id, amount, currency="USD", *,
+                    vendor_evidence_token=None, bank_evidence_token=None,
+                    vendor_name=None, tax_id=None,
+                    routing_number=None, account_number=None):
+    # Rejects absent, stale, replayed, mismatched, or failed-check evidence.
+    # Consumes both tokens before appending the ledger row.
+    ...
 `,
   },
   {
@@ -65,68 +32,48 @@ def check_bank_routing(vendor_id: str, routing_number: str, account_number: str)
     language: "python",
     kind: "runtime",
     code: `# mcp-server/payflow_server.py - FastMCP tool surface
-from fastmcp import FastMCP
-from erp_registry import (
-    check_bank_routing,
-    post_erp_ledger,
-    verify_vendor_entity,
-)
-
-mcp = FastMCP(
-    name="payflow-ap-agent",
-    instructions="Use tools/list, then verify_vendor_entity, check_bank_routing, post_erp_ledger.",
-)
-
-@mcp.tool(name="verify_vendor_entity")
-def tool_verify_vendor_entity(vendorName: str, taxId: str) -> dict:
-    return verify_vendor_entity(vendorName, taxId)
-
-@mcp.tool(name="check_bank_routing")
-def tool_check_bank_routing(
-    vendorId: str, routingNumber: str, accountNumber: str
-) -> dict:
-    return check_bank_routing(vendorId, routingNumber, accountNumber)
-
 @mcp.tool(name="post_erp_ledger")
 def tool_post_erp_ledger(
-    invoiceId: str, vendorId: str, amount: float, currency: str = "USD"
+    invoiceId: str, vendorId: str, amount: float, currency: str = "USD",
+    vendorEvidenceToken: str = "", bankEvidenceToken: str = "",
+    vendorName: str = "", taxId: str = "",
+    routingNumber: str = "", accountNumber: str = "",
 ) -> dict:
-    return post_erp_ledger(invoiceId, vendorId, amount, currency)
-
-if __name__ == "__main__":
-    mcp.run(transport="http", host="127.0.0.1", port=8000)
+    result = post_erp_ledger(
+        invoiceId, vendorId, amount, currency,
+        vendor_evidence_token=vendorEvidenceToken or None,
+        bank_evidence_token=bankEvidenceToken or None,
+        vendor_name=vendorName or None, tax_id=taxId or None,
+        routing_number=routingNumber or None,
+        account_number=accountNumber or None,
+    )
+    if result.get("error"):
+        raise ValueError(result["message"])
+    return result
 `,
   },
   {
     name: "api/payflow/route.ts",
     language: "typescript",
     kind: "runtime",
-    code: `// app/api/payflow/route.ts - SSE stream into the Live console
-import { NextRequest } from "next/server";
-import { runPayFlowAgentEngine } from "@/lib/payflow/agent-engine";
-
+    code: `// app/api/payflow/route.ts - run checks, or AP manager hold actions
 export async function POST(req: NextRequest) {
-  const { invoice } = await req.json();
-  const encoder = new TextEncoder();
+  const body = await req.json();
+  const action = body.action ?? "run";
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      for await (const logEntry of runPayFlowAgentEngine(invoice)) {
-        controller.enqueue(
-          encoder.encode(\`data: \${JSON.stringify(logEntry)}\\n\\n\`)
-        );
-      }
-      controller.close();
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
-  });
+  if (action === "reject_hold") {
+    return Response.json(rejectPayFlowHold(body.holdId, body.reason));
+  }
+  if (action === "release_hold") {
+    // Requires corrected approved routing; re-runs both checks; posts with fresh evidence
+    return sseResponse(releasePayFlowHold({
+      holdId: body.holdId,
+      reason: body.reason,
+      correctedRouting: body.correctedRouting,
+      correctedAccount: body.correctedAccount,
+    }));
+  }
+  return sseResponse(runPayFlowAgentEngine(body.invoice));
 }
 `,
   },
@@ -205,34 +152,114 @@ export const WORKFLOW_SOURCE_FILES: SourceFile[] = [
     language: "typescript",
     kind: "runtime",
     code: `// lib/workflow/state-machine.ts
-export async function* runWorkflowEngine(scenarioKey, sessionId?) {
-  const request = SAMPLE_WORKFLOWS[scenarioKey];
-  const session = createSession(sessionId ?? \`wf-\${Date.now()}\`);
+// Public runtime: TypeScript state machine with in-memory checkpoint.
 
-  // Intake -> Compliance Check -> Financial Threshold -> Final Execution
-  yield createLogEntry("info", "workflow:session",
-    \`Started workflow \${request.requestId}\`,
+// --- Intake ---
+yield nodeTransition(
+  "intake",
+  "intake",
+  \`Intake recorded for \${request.subject} at \${request.site}.\`,
+  trail
+);
+
+// --- Compliance Check ---
+yield nodeTransition(
+  "intake",
+  "compliance_check",
+  "Compliance check started - confirming site policy and required fields.",
+  trail
+);
+
+// --- Financial Threshold ---
+yield nodeTransition(
+  "compliance_check",
+  "financial_threshold",
+  \`Checking financial threshold (pause if amount > $\${FINANCIAL_THRESHOLD_USD.toLocaleString()}).\`,
+  trail
+);
+
+const amount = request.amount;
+const overThreshold =
+  typeof amount === "number" && amount > FINANCIAL_THRESHOLD_USD;
+
+if (overThreshold) {
+  yield createLogEntry(
+    "warning",
+    "node:awaiting_approval",
+    \`Workflow paused. \${WORKFLOW_REVIEWER_ROLE} sign-off needed before the $\${amount!.toLocaleString()} payout can run.\`,
     {
-      demoMode: "mockup",
-      runtime: "in-process",
-      note: "TypeScript state machine",
+      action: "AWAITING_APPROVAL",
+      sessionId: id,
+      amount,
+      threshold: FINANCIAL_THRESHOLD_USD,
+      overThreshold: true,
+      checkpoint: true,
+      node: "awaiting_approval",
+      reviewerRole: WORKFLOW_REVIEWER_ROLE,
+      auditTrail: [...trail],
+    }
+  );
+
+  const decisionResult = await waitForDecision(session);
+  if (decisionResult.decision === "reject") {
+    markSessionRejected(session);
+    const rejectDetail = decisionResult.reason
+      ? \`\${WORKFLOW_REVIEWER_ROLE} rejected the payout. Reason: \${decisionResult.reason}\`
+      : \`\${WORKFLOW_REVIEWER_ROLE} rejected the payout. Workflow stopped.\`;
+    audit(trail, "rejected", rejectDetail, {
+      actor: decisionResult.actor,
+      decision: "reject",
+      reason: decisionResult.reason,
     });
-
-  const overThreshold =
-    typeof request.amount === "number" &&
-    request.amount > FINANCIAL_THRESHOLD_USD;
-
-  if (overThreshold) {
-    yield createLogEntry("warning", "node:awaiting_approval",
-      "Workflow paused. Manager sign-off needed.",
-      { action: "AWAITING_APPROVAL", sessionId: session.id });
-
-    const decision = await waitForDecision(session);
-    if (decision === "reject") return;
+    yield createLogEntry(
+      "error",
+      "workflow:checkpoint",
+      \`\${WORKFLOW_REVIEWER_ROLE} rejected \${request.requestId}. Downstream steps did not run.\`,
+      {
+        action: "REJECTED",
+        sessionId: id,
+        node: "rejected",
+        actor: decisionResult.actor,
+        decidedAt: decisionResult.at,
+        reason: decisionResult.reason,
+        auditTrail: [...trail],
+      }
+    );
+    return;
   }
 
-  // Final execution, then COMPLETED
+  audit(
+    trail,
+    "financial_threshold",
+    \`\${WORKFLOW_REVIEWER_ROLE} approved. Resuming toward final execution.\`,
+    {
+      actor: decisionResult.actor,
+      decision: "approve",
+    }
+  );
+
+  yield createLogEntry(
+    "success",
+    "workflow:checkpoint",
+    \`\${WORKFLOW_REVIEWER_ROLE} approved. Resuming from checkpoint toward final execution.\`,
+    {
+      action: "APPROVED",
+      sessionId: id,
+      node: "financial_threshold",
+      actor: decisionResult.actor,
+      decidedAt: decisionResult.at,
+      auditTrail: [...trail],
+    }
+  );
 }
+
+// --- Final Execution ---
+yield nodeTransition(
+  overThreshold ? "awaiting_approval" : "financial_threshold",
+  "final_execution",
+  "Final execution node started.",
+  trail
+);
 `,
   },
   {
@@ -240,25 +267,49 @@ export async function* runWorkflowEngine(scenarioKey, sessionId?) {
     language: "typescript",
     kind: "runtime",
     code: `// lib/workflow/sessions.ts - Approve / Reject checkpoint (mockup)
-export function waitForDecision(session: WorkflowSession) {
+export function waitForDecision(
+  session: WorkflowSession
+): Promise<WorkflowDecisionResult> {
   session.status = "paused";
-  return new Promise((resolve) => {
-    session.resume = (decision) => {
-      session.decision = decision;
-      session.status = decision === "approve" ? "running" : "rejected";
+  return new Promise<WorkflowDecisionResult>((resolve) => {
+    session.resume = (result) => {
+      session.decision = result.decision;
+      session.decisionMeta = result;
+      session.status = result.decision === "approve" ? "running" : "rejected";
       session.resume = undefined;
-      resolve(decision);
+      resolve(result);
     };
   });
 }
 
-export function submitDecision(sessionId: string, decision: WorkflowDecision) {
+export function submitDecision(
+  sessionId: string,
+  decision: WorkflowDecision,
+  options?: { reason?: string; actor?: string }
+): { ok: true; result: WorkflowDecisionResult } | { ok: false; error: string } {
   const session = getSession(sessionId);
   if (!session || session.status !== "paused" || !session.resume) {
-    return { ok: false, error: "Not waiting for manager sign-off." };
+    return {
+      ok: false,
+      error: "This workflow is not waiting for operations manager sign-off.",
+    };
   }
-  session.resume(decision);
-  return { ok: true };
+
+  const trimmedReason =
+    typeof options?.reason === "string" ? options.reason.trim() : "";
+  const result: WorkflowDecisionResult = {
+    decision,
+    actor: options?.actor?.trim() || WORKFLOW_REVIEWER_ROLE,
+    at: new Date().toISOString(),
+    ...(decision === "reject" && trimmedReason
+      ? { reason: trimmedReason }
+      : decision === "reject"
+        ? { reason: "Rejected by operations manager." }
+        : {}),
+  };
+
+  session.resume(result);
+  return { ok: true, result };
 }
 `,
   },
@@ -267,7 +318,7 @@ export function submitDecision(sessionId: string, decision: WorkflowDecision) {
     language: "typescript",
     kind: "config",
     code: `// lib/workflow/config.ts
-// Prod shape - unused while DEMO_MODE === "mockup"
+// Reference config - unused while DEMO_MODE === "mockup"
 export const workflowProductionConfig = {
   graphEntrypoint: "mcp-server/workflow_graph.py",
   checkpointBackend: "postgres",

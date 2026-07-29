@@ -19,24 +19,25 @@ export function ScenarioOption({
 }) {
   const activeClass =
     tone === "danger"
-      ? "border-l-rose-500 bg-rose-50/60"
+      ? "border-l-danger bg-danger-soft/70"
       : tone === "warn"
-        ? "border-l-amber-500 bg-amber-50/60"
-        : "border-l-opal-purple bg-violet-50/50";
+        ? "border-l-warn bg-warn-soft/70"
+        : "border-l-accent bg-accent-soft/80";
 
   return (
     <button
       type="button"
       disabled={disabled}
+      aria-pressed={active}
       onClick={onClick}
-      className={`w-full border-l-2 px-3 py-3 text-left transition-colors disabled:opacity-60 ${
+      className={`w-full rounded-r-lg border-l-2 px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-60 ${
         active
           ? `${activeClass} text-opal-main`
-          : "border-l-transparent text-opal-muted hover:bg-slate-50 hover:text-opal-main"
+          : "border-l-transparent text-opal-muted hover:bg-console-panel hover:text-opal-main"
       }`}
     >
       <span className="block text-sm font-semibold text-opal-main">{label}</span>
-      <span className="mt-0.5 block text-xs leading-relaxed text-opal-muted">
+      <span className="mt-0.5 block text-sm leading-relaxed text-opal-muted">
         {detail}
       </span>
     </button>
@@ -65,13 +66,13 @@ export function DetailList({
   rows: Array<{ label: string; value: React.ReactNode; emphasize?: boolean }>;
 }) {
   return (
-    <dl className="space-y-2 text-[13px]">
+    <dl className="space-y-2 text-sm">
       {rows.map((row) => (
         <div key={row.label} className="flex justify-between gap-4">
           <dt className="font-medium text-opal-label">{row.label}</dt>
           <dd
             className={`text-right font-medium ${
-              row.emphasize ? "text-opal-violet" : "text-opal-main"
+              row.emphasize ? "text-accent-deep" : "text-opal-main"
             }`}
           >
             {row.value}
@@ -89,7 +90,7 @@ export function ResultStrip({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-t border-slate-200 pt-4 space-y-2.5">{children}</div>
+    <div className="space-y-2.5 border-t border-line pt-4">{children}</div>
   );
 }
 
@@ -126,7 +127,7 @@ export function DemoPrimaryButton({
       type="button"
       onClick={onClick}
       disabled={disabled || isRunning}
-      className="group mt-2 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-opal-purple px-4 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-opal-violet disabled:opacity-50"
+      className="btn-primary group mt-2 w-full py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
     >
       <span>{isRunning ? busyLabel : label}</span>
       {!isRunning ? (

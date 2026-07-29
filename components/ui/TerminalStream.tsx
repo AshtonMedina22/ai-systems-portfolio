@@ -34,23 +34,23 @@ const LEVEL_STYLES: Record<
   LogEntry["level"],
   { label: string; className: string }
 > = {
-  info: { label: "INFO", className: "text-violet-300" },
-  tool_call: { label: "CALL", className: "text-fuchsia-300" },
-  tool_result: { label: "RESULT", className: "text-slate-100" },
-  warning: { label: "WARN", className: "text-amber-300" },
-  error: { label: "ERROR", className: "text-rose-300" },
-  success: { label: "OK", className: "text-emerald-300" },
+  info: { label: "INFO", className: "text-accent-deep" },
+  tool_call: { label: "CALL", className: "text-opal-periwinkle" },
+  tool_result: { label: "RESULT", className: "text-opal-muted" },
+  warning: { label: "WARN", className: "text-warn" },
+  error: { label: "ERROR", className: "text-danger" },
+  success: { label: "OK", className: "text-ok" },
 };
 
 function PayloadDisclosure({ data }: { data: Record<string, unknown> }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="mt-2 border border-slate-500/60 bg-slate-950/35">
+    <div className="mt-2 overflow-hidden rounded-lg border border-line bg-console-panel">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-slate-300 hover:text-white transition-colors"
+        className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left font-mono text-[11px] font-medium uppercase tracking-wide text-opal-muted transition-colors hover:text-opal-main"
       >
         <span>View details</span>
         <ChevronDown
@@ -58,7 +58,7 @@ function PayloadDisclosure({ data }: { data: Record<string, unknown> }) {
         />
       </button>
       {open ? (
-        <pre className="overflow-x-auto border-t border-slate-500/60 px-2.5 py-2 font-mono text-[11px] leading-relaxed text-slate-300">
+        <pre className="overflow-x-auto border-t border-line bg-white px-2.5 py-2 font-mono text-[11px] leading-relaxed text-opal-main">
           {JSON.stringify(data, null, 2)}
         </pre>
       ) : null}
@@ -82,27 +82,27 @@ export function TerminalStream({
   }, [logs]);
 
   return (
-    <div className="flex h-full min-h-[420px] flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-500/50 px-5 py-3.5 bg-slate-800/80">
-        <div className="flex items-center gap-2.5 min-w-0">
+    <div className="flex h-full min-h-[420px] flex-col bg-console-bg text-console-fg">
+      <div className="opal-chrome flex items-center justify-between gap-3 border-b border-console-border px-5 py-3.5">
+        <div className="flex min-w-0 items-center gap-2.5">
           <span
             className={`h-2 w-2 shrink-0 rounded-full ${
-              isRunning ? "bg-violet-400 animate-pulse-line" : "bg-slate-400"
+              isRunning ? "bg-accent animate-pulse-line" : "bg-opal-mist"
             }`}
             aria-hidden
           />
-          <h2 className="font-display text-lg text-white truncate">{title}</h2>
+          <h2 className="truncate font-display text-lg font-semibold text-opal-main">
+            {title}
+          </h2>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <span className="label-console">
-            {logs.length} events
-          </span>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="label-console">{logs.length} events</span>
           {onClear ? (
             <button
               type="button"
               onClick={onClear}
               disabled={isRunning || logs.length === 0}
-              className="inline-flex items-center gap-1 label-console hover:text-white disabled:opacity-40 transition-colors"
+              className="label-console inline-flex items-center gap-1 transition-colors hover:text-opal-main disabled:opacity-40"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Clear
@@ -113,19 +113,19 @@ export function TerminalStream({
 
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 sm:px-5 py-4"
+        className="flex-1 overflow-y-auto px-4 py-4 sm:px-5"
       >
         {logs.length === 0 && !isRunning ? (
           <div className="flex h-full min-h-[280px] items-center justify-center px-4">
-            <div className="max-w-sm text-center text-[15px] leading-relaxed text-slate-300">
+            <div className="max-w-sm text-center text-[15px] leading-relaxed text-opal-muted">
               {emptyMessage ?? (
                 <p>
                   Run a scenario to stream MCP{" "}
-                  <span className="font-mono text-[13px] font-medium text-violet-300">
+                  <span className="font-mono text-sm font-medium text-accent-deep">
                     tools/list
                   </span>{" "}
                   and{" "}
-                  <span className="font-mono text-[13px] font-medium text-violet-300">
+                  <span className="font-mono text-sm font-medium text-accent-deep">
                     tools/call
                   </span>{" "}
                   into this console.
@@ -135,42 +135,42 @@ export function TerminalStream({
           </div>
         ) : null}
 
-        <ol className="relative border-l border-slate-500/60 ml-2 pl-4 space-y-4">
+        <ol className="relative ml-2 space-y-4 border-l border-line pl-4">
           {logs.map((log) => {
             const style = LEVEL_STYLES[log.level] ?? LEVEL_STYLES.info;
             const resultBadge = resultBadgeForLog(log);
             return (
               <li key={log.id} className="animate-log-in relative">
                 <span
-                  className={`absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-opal-terminal ${
+                  className={`absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white ${
                     log.level === "error"
-                      ? "bg-rose-400"
+                      ? "bg-danger"
                       : log.level === "success"
-                        ? "bg-emerald-400"
+                        ? "bg-ok"
                         : log.level === "warning"
-                          ? "bg-amber-400"
-                          : "bg-violet-400"
+                          ? "bg-warn"
+                          : "bg-accent"
                   }`}
                 />
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="font-mono text-[11px] text-slate-400">
+                  <span className="font-mono text-[11px] text-opal-mist">
                     {log.timestamp}
                   </span>
                   <span
-                    className={`font-mono text-[11px] font-semibold uppercase tracking-[0.08em] ${style.className}`}
+                    className={`font-mono text-[11px] font-semibold uppercase tracking-wide ${style.className}`}
                   >
                     {style.label}
                   </span>
-                  <span className="font-mono text-[11px] text-slate-400">
+                  <span className="font-mono text-[11px] text-opal-mist">
                     {log.source}
                   </span>
                   {resultBadge ? (
-                    <Badge tone={resultBadge.tone} variant="dark">
+                    <Badge tone={resultBadge.tone}>
                       {resultBadge.label}
                     </Badge>
                   ) : null}
                 </div>
-                <p className="mt-1 text-[14px] leading-snug text-slate-100">
+                <p className="mt-1 text-sm leading-snug text-opal-main">
                   {log.message}
                 </p>
                 {log.data ? <PayloadDisclosure data={log.data} /> : null}
@@ -180,7 +180,7 @@ export function TerminalStream({
         </ol>
 
         {isRunning ? (
-          <p className="mt-4 ml-6 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-violet-300 animate-pulse-line">
+          <p className="ml-6 mt-4 animate-pulse-line font-mono text-[11px] font-medium uppercase tracking-wide text-accent">
             {runningLabel}
           </p>
         ) : null}

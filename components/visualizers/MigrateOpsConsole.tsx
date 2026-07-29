@@ -121,35 +121,31 @@ export function MigrateOpsConsole({
           eventCount={logs.length}
           onClear={onClear}
         >
-          <div className="rounded-xl border border-slate-500/50 bg-slate-950/35 px-3.5 py-3">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-              Migration progress
-            </p>
-            <p className="mt-1 text-[13px] text-slate-300">
+          <div className="console-panel px-3.5 py-3">
+            <p className="label-console">Migration progress</p>
+            <p className="mt-1 text-sm text-opal-muted">
               Mid-West Logistics onboarding into{" "}
-              <span className="font-mono text-violet-300">
+              <span className="font-mono text-accent-deep">
                 {state.tenantSchema ?? DEMO_TENANT_SCHEMA}
-              </span>
-              {" "}(simulated tenant space)
+              </span>{" "}
+              (simulated tenant space)
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-500/50 bg-slate-950/35 p-4">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-              Row progress
-            </p>
-            <p className="mt-2 font-display text-2xl text-white">
+          <div className="console-panel p-4">
+            <p className="label-console">Row progress</p>
+            <p className="mt-2 font-display text-2xl font-semibold text-opal-main">
               Processing row{" "}
-              <span className="text-violet-300">
+              <span className="text-accent">
                 {idle ? "0" : displayRow.toLocaleString()}
               </span>
               {" of "}
               {(state.totalRows ?? 1420).toLocaleString()}
               ...
             </p>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-700/80">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-line">
               <div
-                className="h-full rounded-full bg-violet-400 transition-[width] duration-200"
+                className="h-full rounded-full bg-accent transition-[width] duration-200"
                 style={{
                   width: idle
                     ? "0%"
@@ -161,7 +157,7 @@ export function MigrateOpsConsole({
               />
             </div>
             {idle ? (
-              <p className="mt-2 text-[12px] text-slate-400">
+              <p className="mt-2 text-sm text-opal-muted">
                 Hit Run migration on the left to start the row counter and
                 health tiles.
               </p>
@@ -169,36 +165,36 @@ export function MigrateOpsConsole({
           </div>
 
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/25 px-3 py-3 text-center">
-              <p className="font-display text-xl text-emerald-300">
+            <div className="rounded-xl border border-ok/20 bg-ok-soft px-3 py-3 text-center">
+              <p className="font-display text-xl font-semibold text-ok">
                 {idle ? "-" : state.valid.toLocaleString()}
               </p>
-              <p className="mt-1 text-[11px] leading-snug text-slate-300">
+              <p className="mt-1 text-xs leading-snug text-opal-muted">
                 Valid records
               </p>
             </div>
-            <div className="rounded-xl border border-amber-500/30 bg-amber-950/25 px-3 py-3 text-center">
-              <p className="font-display text-xl text-amber-300">
+            <div className="rounded-xl border border-warn/20 bg-warn-soft px-3 py-3 text-center">
+              <p className="font-display text-xl font-semibold text-warn">
                 {idle ? "-" : state.autoSanitized.toLocaleString()}
               </p>
-              <p className="mt-1 text-[11px] leading-snug text-slate-300">
+              <p className="mt-1 text-xs leading-snug text-opal-muted">
                 Auto-sanitized schema warnings
               </p>
             </div>
-            <div className="rounded-xl border border-slate-500/40 bg-slate-950/35 px-3 py-3 text-center">
-              <p className="font-display text-sm leading-tight text-slate-100 break-all">
+            <div className="console-panel px-3 py-3 text-center">
+              <p className="break-all font-display text-sm font-semibold leading-tight text-opal-main">
                 {state.tenantSchema ?? kpis.tenantSchema ?? DEMO_TENANT_SCHEMA}
               </p>
-              <p className="mt-1 text-[11px] leading-snug text-slate-300">
+              <p className="mt-1 text-xs leading-snug text-opal-muted">
                 Tenant schema
               </p>
             </div>
           </div>
 
           {state.cutover === "ok" ? (
-            <div className="rounded-xl border border-emerald-400/40 bg-emerald-950/30 px-3.5 py-3 text-[13px] text-emerald-100">
+            <div className="rounded-xl border border-ok/25 bg-ok-soft px-3.5 py-3 text-sm text-ok">
               {state.valid.toLocaleString()} records written to isolated schema{" "}
-              <span className="font-mono text-emerald-200">
+              <span className="font-mono font-semibold">
                 {state.tenantSchema ?? DEMO_TENANT_SCHEMA}
               </span>
               {state.autoSanitized > 0
@@ -208,7 +204,7 @@ export function MigrateOpsConsole({
           ) : null}
 
           {state.cutover === "blocked" ? (
-            <div className="rounded-xl border border-rose-400/40 bg-rose-950/30 px-3.5 py-3 text-[13px] text-rose-100">
+            <div className="rounded-xl border border-danger/25 bg-danger-soft px-3.5 py-3 text-sm text-danger">
               Cutover held after sanitization -{" "}
               {state.autoSanitized.toLocaleString()} schema warnings still need
               cleanup before writing to production tenant space.
@@ -221,11 +217,9 @@ export function MigrateOpsConsole({
             maxVisible={12}
           />
           {idle ? (
-            <div className="rounded-xl border border-slate-500/50 bg-slate-950/40 px-3 py-3">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                Activity log
-              </p>
-              <p className="mt-2 text-[12px] text-slate-500">
+            <div className="console-panel px-3 py-3">
+              <p className="label-console">Activity log</p>
+              <p className="mt-2 text-sm text-opal-muted">
                 Color-coded [INFO] / [WARN] / [OK] events will stream here while
                 the migration runs.
               </p>
