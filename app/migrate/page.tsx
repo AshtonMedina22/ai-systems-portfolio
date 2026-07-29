@@ -280,6 +280,14 @@ export default function MigratePage() {
         challenge="Client exports arrive with different headers and formatting. Manual fixes slow onboarding, and partial imports can leave billing and user records out of sync."
         solution="A reusable import template pauses on ambiguous columns, lets an operator map or leave them out, normalizes every row, checks account-billing-user dependencies, and rejects the full batch when blocking errors remain. Quarantined fields can be remediated and revalidated before commit."
         impact="The operating model behind this demo supported 3,000+ customer onboardings and reduced implementation timelines by 30% through reusable mapping templates and playbooks."
+        guardrails={{
+          objective:
+            "Standardize inbound client data to prevent messy CSVs from breaking schemas, contributing to a historical 30% reduction in onboarding time.",
+          access:
+            "Validates and stages data in isolated, client-specific schemas. Does not write directly to the multi-tenant production core until verified.",
+          failure:
+            "Row-level formatting errors reject the atomic batch, quarantining the inbound file so production data remains intact.",
+        }}
         architecture="Next.js sends a preset or uploaded CSV to /api/migrate. A TypeScript engine parses actual rows, applies operator mappings or a saved playbook, normalizes and validates related entities, then streams mapping, quarantine, remediation, receipt, and atomic commit evidence over SSE."
         tradeoffs={[
           "The public demo performs real in-process parsing and validation but simulates the final database transaction.",

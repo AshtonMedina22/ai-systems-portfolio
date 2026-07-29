@@ -143,6 +143,14 @@ export default function PayFlowPage() {
         challenge="A slightly altered routing number can send money to the wrong account before anyone catches it, especially when vendor checks are informal."
         solution="An invoice verification path that matches vendors to the registry, checks bank routing against approved profiles, and holds mismatched payouts for AP manager review."
         impact="Unknown vendors and routing mismatches are held before money moves, with an explicit AP manager release or reject path."
+        guardrails={{
+          objective:
+            "Automate vendor verification against the ERP registry to catch routing mismatches before payouts are processed.",
+          access:
+            "Read-only query access to the vendor registry. Write access is restricted to flagging and holding records in the staging ledger.",
+          failure:
+            "Mismatches automatically halt the flow and route the invoice to an AP manager for manual review and release.",
+        }}
         whenWrong={
           <div className="rounded-xl border border-line bg-console-panel px-4 py-4 sm:px-5 sm:py-5">
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">

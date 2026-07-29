@@ -218,6 +218,14 @@ export default function WorkflowPage() {
         challenge="Teams often collapse permissions, live intervention, and audit into one layer - so high-value automation can move without a clear stop, and logs only explain harm after it happens."
         solution={`A governed step runner that checks policy before action, pauses above $${FINANCIAL_THRESHOLD_USD.toLocaleString()} for operations manager intervention, and emits a hash-chained session receipt for who decided, when, on what amount, and under which policy.`}
         impact="Routine work proceeds under policy bounds; high-risk spend cannot complete without an explicit human decision, and reject rolls back the reserved authorization hold instead of leaving a dangling intent."
+        guardrails={{
+          objective:
+            "Replace un-auditable email approvals with a strict state machine that enforces manager sign-off on requests over $10,000.",
+          access:
+            "Read/write access restricted to internal request records, communication routing, and the central policy engine.",
+          failure:
+            "Rejected requests trigger a state rollback of the authorization hold and log the exact failure reason for compliance auditing.",
+        }}
         whenWrong={
           <div className="rounded-xl border border-line bg-console-panel px-4 py-4 sm:px-5 sm:py-5">
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -56,6 +56,11 @@ jobs:
           WORKFLOW_TEST_FAST: "1"
         run: npm run test:workflow-engine
 
+      - name: Privacy engine tests
+        env:
+          PRIVACY_TEST_FAST: "1"
+        run: npm run test:privacy-engine
+
       - name: TypeScript check
         run: npm run typecheck
 

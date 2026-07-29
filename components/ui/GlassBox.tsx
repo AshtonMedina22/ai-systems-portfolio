@@ -16,6 +16,15 @@ export interface GlassBoxProps {
   impact?: string;
   /** Callout for mismatch / hold / review path. */
   whenWrong?: React.ReactNode;
+  /**
+   * Executive guardrails panel - same three headings on every demo.
+   * Answers success metric, access scope, and failure ownership.
+   */
+  guardrails?: {
+    objective: string;
+    access: string;
+    failure: string;
+  };
   /** How the system fits together - short, human. */
   architecture?: string;
   /** Visual flow diagram shown in the architecture section. */
@@ -51,6 +60,7 @@ export function GlassBox({
   solution,
   impact,
   whenWrong,
+  guardrails,
   architecture,
   architectureVisual,
   tradeoffs,
@@ -165,6 +175,41 @@ export function GlassBox({
           <span className="label-opal">Stack</span>
           <span className="text-opal-label">{stack}</span>
         </p>
+      ) : null}
+
+      {guardrails ? (
+        <section
+          aria-label="System Guardrails and Scope"
+          className="mt-8 max-w-4xl border-t border-line pt-6"
+        >
+          <h2 className="label-opal">System Guardrails & Scope</h2>
+          <dl className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-8">
+            <div>
+              <dt className="text-sm font-semibold text-opal-main">
+                Primary Objective
+              </dt>
+              <dd className="mt-2 text-[15px] leading-relaxed text-opal-muted">
+                {guardrails.objective}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-semibold text-opal-main">
+                System Access
+              </dt>
+              <dd className="mt-2 text-[15px] leading-relaxed text-opal-muted">
+                {guardrails.access}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-semibold text-opal-main">
+                Failure Handling
+              </dt>
+              <dd className="mt-2 text-[15px] leading-relaxed text-opal-muted">
+                {guardrails.failure}
+              </dd>
+            </div>
+          </dl>
+        </section>
       ) : null}
 
       {whenWrong ? (

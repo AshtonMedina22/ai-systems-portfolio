@@ -3,6 +3,7 @@ import { contactMailto, site } from "@/lib/site";
 import { PAYFLOW_FRAMING } from "@/lib/payflow/runtime";
 import { MIGRATE_FRAMING } from "@/lib/migrate/runtime";
 import { WORKFLOW_FRAMING } from "@/lib/workflow/runtime";
+import { PRIVACY_FRAMING } from "@/lib/privacy/runtime";
 
 const PROJECTS = [
   {
@@ -39,6 +40,19 @@ const PROJECTS = [
     tech: ["TypeScript", "Next.js", "SSE"],
     demoHref: "/workflow",
     codeHref: `${site.githubRepo}/blob/main/lib/workflow/state-machine.ts`,
+  },
+  {
+    title: "Data Privacy & Safety Suite",
+    mark: "DP",
+    accent: "aqua" as const,
+    framing: PRIVACY_FRAMING,
+    summary:
+      "A redaction proxy that scrubs or blocks sensitive tokens before they reach downstream tools or AI.",
+    outcome:
+      "Clean tickets pass; embedded PII is masked; bulk restricted dumps stop pre-transit.",
+    tech: ["TypeScript", "Next.js", "SSE"],
+    demoHref: "/privacy",
+    codeHref: `${site.githubRepo}/blob/main/lib/privacy/engine.ts`,
   },
 ] as const;
 
@@ -82,6 +96,10 @@ const accentStyles = {
     mark: "bg-danger-soft text-danger",
     label: "text-danger",
   },
+  aqua: {
+    mark: "bg-ok-soft text-opal-aqua",
+    label: "text-opal-aqua",
+  },
 } as const;
 
 export default function HomePage() {
@@ -124,7 +142,7 @@ export default function HomePage() {
             </div>
             <div className="px-3 lg:px-0 lg:py-3">
               <dt className="font-display text-xl font-semibold text-opal-main">
-                3 demos
+                4 demos
               </dt>
               <dd className="mt-0.5 text-xs leading-snug text-opal-muted sm:text-sm">
                 showing systems, not slides
@@ -154,11 +172,11 @@ export default function HomePage() {
             </h2>
           </div>
           <p className="hidden max-w-md text-sm text-opal-muted sm:block">
-            Three compact case studies with working demos and source.
+            Four compact case studies with working demos and source.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {PROJECTS.map((project) => {
             const styles = accentStyles[project.accent];
             return (

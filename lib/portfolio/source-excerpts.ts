@@ -279,3 +279,78 @@ export const workflowProductionConfig = {
 `,
   },
 ];
+
+/** Privacy: mockup runtime first, then prod config sample. */
+export const PRIVACY_SOURCE_FILES: SourceFile[] = [
+  {
+    name: "engine.ts",
+    language: "typescript",
+    kind: "runtime",
+    code: `// lib/privacy/engine.ts
+// Public runtime: deterministic scan, sanitize or block, privacy receipt.
+
+const findings = scanText(sourceText);
+const { decision, exceptionCode } = decideProxy(findings, scenarioKey);
+const sanitizedText =
+  decision === "blocked" ? "" : redactText(sourceText, findings);
+
+if (decision === "blocked") {
+  yield createLogEntry("error", "privacy:gate", "Transmission blocked.", {
+    action: "PAYLOAD_BLOCKED",
+    decision,
+    exceptionCode,
+    receipt,
+  });
+  return;
+}
+
+if (decision === "sanitized") {
+  yield createLogEntry("tool_result", "privacy:redactor", "Tokens replaced.", {
+    action: "PAYLOAD_SANITIZED",
+    sourceText,
+    sanitizedText,
+  });
+}
+
+yield createLogEntry("success", "privacy:proxy", "Payload cleared.", {
+  action: "PAYLOAD_CLEARED",
+  decision,
+  receipt,
+});
+`,
+  },
+  {
+    name: "types.ts",
+    language: "typescript",
+    kind: "runtime",
+    code: `// lib/privacy/types.ts - synthetic scenarios only
+export const SAMPLE_SCENARIOS = {
+  clean: { /* operational text, 0 flags */ },
+  embedded_pii: { /* SSN, card, email, API key -> sanitize */ },
+  bulk_block: { /* many tokens -> block pre-transit */ },
+} as const;
+
+export const BULK_FINDING_THRESHOLD = 8;
+export const PLACEHOLDERS = {
+  ssn: "[REDACTED_SSN]",
+  credit_card: "[REDACTED_CC]",
+  email: "[REDACTED_EMAIL]",
+  api_key: "[REDACTED_KEY]",
+  phone: "[REDACTED_PHONE]",
+} as const;
+`,
+  },
+  {
+    name: "config.ts",
+    language: "typescript",
+    kind: "config",
+    code: `// lib/privacy/config.ts
+// Reference config - unused while DEMO_MODE === "mockup"
+export const privacyProductionConfig = {
+  mode: "edge_middleware",
+  persistence: "none",
+  note: "Stateless scan at the network boundary; durable audit would ship to a separate log store.",
+} as const;
+`,
+  },
+];
