@@ -55,6 +55,9 @@ export function Navbar() {
           <a href="/#projects" className={navLinkClass}>
             Projects
           </a>
+          <a href="/#where-i-deliver" className={navLinkClass}>
+            What I Build
+          </a>
           <a
             href={site.linkedin}
             target="_blank"
@@ -115,6 +118,13 @@ export function Navbar() {
               onClick={() => setOpen(false)}
             >
               Projects
+            </a>
+            <a
+              href="/#where-i-deliver"
+              className={`${navLinkClass} block`}
+              onClick={() => setOpen(false)}
+            >
+              What I Build
             </a>
             <a
               href={site.linkedin}

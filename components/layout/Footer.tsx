@@ -15,7 +15,7 @@ export function Footer() {
       />
 
       <section
-        className="relative mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1.25fr_0.75fr] lg:items-center lg:gap-20 lg:px-8 lg:py-24"
+        className="relative mx-auto grid max-w-7xl gap-8 px-5 py-12 sm:px-6 sm:py-14 lg:grid-cols-[1.25fr_0.75fr] lg:items-center lg:gap-14 lg:px-8 lg:py-16"
         aria-labelledby="contact-heading"
       >
         <div>
@@ -24,16 +24,16 @@ export function Footer() {
           </p>
           <h2
             id="contact-heading"
-            className="mt-4 max-w-3xl font-display text-3xl font-semibold leading-tight tracking-[-0.03em] text-white sm:text-4xl lg:text-5xl"
+            className="mt-3 max-w-3xl font-display text-3xl font-semibold leading-tight tracking-[-0.03em] text-white sm:text-4xl lg:text-[40px]"
           >
             Let&apos;s build the system your operations need next.
           </h2>
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65 sm:text-lg">
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/65">
             If you&apos;re building or modernizing business systems, I&apos;d
             welcome the opportunity to discuss how I can help.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-4">
+          <div className="mt-6 flex flex-wrap items-center gap-4">
             <a
               href={contactMailto}
               className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-opal-main transition-colors hover:bg-opal-lilac focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-opal-aqua focus-visible:ring-offset-2 focus-visible:ring-offset-[#17182e]"
@@ -53,11 +53,11 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 backdrop-blur-xl sm:p-6">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 backdrop-blur-xl">
           <p className="text-xs font-semibold uppercase tracking-[0.1em] text-white/45">
             How I approach the work
           </p>
-          <ol className="mt-5 space-y-4">
+          <ol className="mt-4 space-y-3">
             {[
               ["01", "Understand how the operation really runs"],
               ["02", "Design the workflows and control points"],
@@ -65,7 +65,7 @@ export function Footer() {
             ].map(([number, label]) => (
               <li
                 key={number}
-                className="flex items-center gap-4 border-t border-white/10 pt-4 first:border-t-0 first:pt-0"
+                className="flex items-center gap-3 border-t border-white/10 pt-3 first:border-t-0 first:pt-0"
               >
                 <span className="font-mono text-xs text-opal-aqua">
                   {number}
@@ -80,19 +80,19 @@ export function Footer() {
       </section>
 
       <div className="relative border-t border-white/10 bg-black/10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <a
             href="/"
             className="group flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-opal-aqua"
             aria-label={`${site.name} home`}
           >
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white p-1.5 shadow-sm">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] p-1">
               <Image
                 src="/am-logo.png"
                 alt=""
                 width={36}
                 height={36}
-                className="h-full w-full object-contain"
+                className="h-full w-full object-contain brightness-0 invert"
                 aria-hidden
               />
             </span>
