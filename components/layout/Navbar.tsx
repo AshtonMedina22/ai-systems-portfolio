@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { contactMailto, site } from "@/lib/site";
@@ -28,9 +29,14 @@ export function Navbar() {
           className="group flex min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           onClick={() => setOpen(false)}
         >
-          <span
-            className="h-2.5 w-2.5 shrink-0 rounded-full bg-opal-aqua shadow-[0_0_12px_rgba(126,177,212,0.5)]"
+          <Image
+            src="/am-logo.png"
+            alt=""
+            width={36}
+            height={36}
+            className="h-8 w-8 shrink-0 object-contain sm:h-9 sm:w-9"
             aria-hidden
+            priority
           />
           <span className="min-w-0">
             <span className="block font-display text-[15px] font-semibold tracking-tight text-opal-main transition-colors group-hover:text-opal-violet sm:text-base">
@@ -48,14 +54,6 @@ export function Navbar() {
         >
           <a href="/#projects" className={navLinkClass}>
             Projects
-          </a>
-          <a
-            href={site.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={navLinkClass}
-          >
-            GitHub
           </a>
           <a
             href={site.linkedin}
@@ -117,15 +115,6 @@ export function Navbar() {
               onClick={() => setOpen(false)}
             >
               Projects
-            </a>
-            <a
-              href={site.github}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${navLinkClass} block`}
-              onClick={() => setOpen(false)}
-            >
-              GitHub
             </a>
             <a
               href={site.linkedin}

@@ -15,7 +15,6 @@ const PROJECTS = [
     outcome: "Changed routing and unknown vendors stop before money moves.",
     tech: ["Python", "FastMCP", "Next.js"],
     demoHref: "/payflow",
-    codeHref: `${site.githubRepo}/blob/main/mcp-server/payflow_server.py`,
   },
   {
     title: "Client Migration Pipeline",
@@ -26,7 +25,6 @@ const PROJECTS = [
     outcome: "Bad data is cleaned or held before it can derail onboarding.",
     tech: ["TypeScript", "Next.js", "SSE"],
     demoHref: "/migrate",
-    codeHref: `${site.githubRepo}/blob/main/lib/migrate/engine.ts`,
   },
   {
     title: "Workflow Governance & Control",
@@ -39,7 +37,6 @@ const PROJECTS = [
       "Routine work continues under policy; over $10,000 holds for manager decision or rollback.",
     tech: ["TypeScript", "Next.js", "SSE"],
     demoHref: "/workflow",
-    codeHref: `${site.githubRepo}/blob/main/lib/workflow/state-machine.ts`,
   },
   {
     title: "Data Privacy & Safety Suite",
@@ -52,7 +49,6 @@ const PROJECTS = [
       "Clean tickets pass; embedded PII is masked; bulk restricted dumps stop pre-transit.",
     tech: ["TypeScript", "Next.js", "SSE"],
     demoHref: "/privacy",
-    codeHref: `${site.githubRepo}/blob/main/lib/privacy/engine.ts`,
   },
 ] as const;
 
@@ -225,14 +221,6 @@ export default function HomePage() {
                     >
                       View demo
                     </Link>
-                    <a
-                      href={project.codeHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex h-9 items-center text-sm font-semibold text-accent-deep underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                    >
-                      Read code
-                    </a>
                   </div>
                 </div>
               </article>
