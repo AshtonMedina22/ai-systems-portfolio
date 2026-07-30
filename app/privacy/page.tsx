@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { GlassBox } from "@/components/ui/GlassBox";
 import { PrivacyOpsConsole } from "@/components/visualizers/PrivacyOpsConsole";
 import { PrivacyArchitectureFlow } from "@/components/visualizers/PrivacyArchitectureFlow";
+import { PrivacyExceptionRecovery } from "@/components/visualizers/PrivacyExceptionRecovery";
 import { Badge } from "@/components/ui/Badge";
 import {
   DemoPrimaryButton,
@@ -123,7 +124,7 @@ async function readSse(
 
 export default function PrivacyPage() {
   const [selected, setSelected] =
-    useState<PrivacyScenarioKey>("clean");
+    useState<PrivacyScenarioKey>("embedded_pii");
   const [customText, setCustomText] = useState(
     "Please call back at 415-555-0134 about PO-4412. No card or SSN in this note."
   );
@@ -214,78 +215,31 @@ export default function PrivacyPage() {
   return (
     <main className="min-h-screen">
       <GlassBox
-        title="Data Privacy & Safety Suite"
+        title="Sensitive Data Redaction Gateway"
         framing={PRIVACY_FRAMING}
         badge="Project 4"
-        purpose="A lightweight redaction proxy between internal apps and downstream processors or AI endpoints."
-        valueLine="Inbound text is scanned for known sensitive formats, scrubbed or blocked before transit, and logged with a privacy receipt."
-        controlStatement="Sensitive tokens do not leave the proxy unmasked on the sanitize path. Bulk restricted payloads are not forwarded at all."
-        challenge="Teams want AI and automation on operational text, but one pasted SSN, card number, or API key in a ticket can land in prompt logs or a third-party API."
-        solution="A deterministic in-process proxy that pattern-checks inbound payloads, replaces known sensitive tokens with placeholders, blocks bulk restricted dumps, opens a security review case on block, and supports a false-positive release when regex over-masking hurts support work."
-        impact="Clean tickets pass. Embedded PII is sanitized before transit. Bulk restricted exports are stopped pre-transit with an exception code and a review case for oversight."
+        purpose="A governed gateway that stops sensitive operational text before it reaches AI tools, external APIs, or downstream logs."
+        valueLine="Known PII is detected, masked, or blocked before transit, with operator recovery and a hash-linked receipt for every decision."
+        controlStatement="Raw inbound text remains client-owned. The event stream returns only safe output, finding metadata, and decision evidence."
+        challenge="Operational teams need AI and automation on tickets, notes, and support text, but one pasted SSN, card number, or API key can create an uncontrolled disclosure."
+        solution="A bounded redaction gateway scans five common sensitive formats, replaces known tokens before transit, fails closed on bulk-restricted payloads, and gives operators auditable recovery paths for blocks and over-masking."
+        impact="Five sensitive-data formats are checked before transit. Embedded PII is replaced, bulk payloads stop at 8+ findings, and raw inbound text is never echoed in SSE events."
         guardrails={{
           objective:
-            "Intercept inbound text and scrub sensitive tokens before downstream processing or external API transit.",
+            "Prevent known sensitive formats from reaching downstream processors in clear text.",
           access:
-            "Stateless in-memory proxy. Processes strings on the fly; raw inbound text stays client-owned and is not written into the event stream.",
+            "Processes bounded text in memory. Raw input stays client-owned and is excluded from the event stream.",
           failure:
-            "High-risk or bulk restricted payloads are blocked before transit, logged with an exception code, and open a security review case for oversight.",
+            "Bulk-restricted payloads stop before transit, receive an exception code, and open an operator-owned security review case.",
         }}
-        whenWrong={
-          <div className="rounded-xl border border-line bg-console-panel px-4 py-4 sm:px-5 sm:py-5">
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-sm font-semibold text-opal-main">
-                  Pattern coverage is finite
-                </dt>
-                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
-                  Checks cover common SSN, payment card (Luhn), email, API key,
-                  and phone formats. Novel encodings and free-form secrets can
-                  still slip through.
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-semibold text-opal-main">
-                  Over-mask recovery
-                </dt>
-                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
-                  When regex mangling blocks useful support text, an operator can
-                  release one finding kind as a false positive with a reason and
-                  re-scan. The release is recorded on the receipt.
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-semibold text-opal-main">
-                  Bulk path opens a review case
-                </dt>
-                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
-                  At {BULK_FINDING_THRESHOLD}+ findings (or the bulk scenario),
-                  the proxy blocks forwarding, emits exception{" "}
-                  <span className="font-mono text-xs">PRIV-BULK-RESTRICTED</span>
-                  , and opens a security review case for acknowledgment.
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-semibold text-opal-main">
-                  Receipt and size limits
-                </dt>
-                <dd className="mt-1 text-[15px] leading-relaxed text-opal-muted">
-                  The privacy receipt is a run artifact with a trail hash - not a
-                  durable WORM archive. Payloads over {MAX_PAYLOAD_CHARS} chars
-                  are rejected before scan.
-                </dd>
-              </div>
-            </dl>
-          </div>
-        }
+        exceptionLabel="Exception and recovery model"
+        exceptionKicker="How detection gaps, over-masking, bulk restrictions, and oversized payloads are contained and resolved."
+        exceptionMode="expanded"
+        whenWrong={<PrivacyExceptionRecovery />}
+        architectureLabel="System design and decisions"
+        architectureKicker="Control flow, data boundaries, and the engineering choices behind safe downstream transit."
+        architectureMode="expanded"
         architectureVisual={<PrivacyArchitectureFlow />}
-        architecture="UI starts a scenario or custom payload. /api/privacy runs a TypeScript in-process proxy: size check, deterministic scan, sanitize or block, optional false-positive release, security review case on block, then a privacy receipt over SSE. Raw inbound text is not echoed in stream events. Edge middleware and durable audit stores can sit in front of production AI gateways; config in the repo is reference only for this hosted demo."
-        tradeoffs={[
-          "Deterministic patterns are explainable and fast - they are not a claim of full GDPR, SOC 2, or HIPAA certification.",
-          "In-memory demo scans keep the public site simple; production would typically place the proxy at an edge or API gateway with separate audit shipping.",
-          "Bulk block prefers fail-closed over aggressive partial redaction when finding density looks like a restricted export.",
-          "False-positive release is an audited operator override for one run - it is not a permanent detector disable.",
-        ]}
         stack="TypeScript, Next.js, SSE"
         isRunning={isRunning}
         controlLabel="Scenario"
@@ -391,7 +345,7 @@ export default function PrivacyPage() {
             ) : null}
 
             <DemoPrimaryButton
-              label="Run privacy proxy"
+              label="Run redaction gateway"
               busyLabel="Scanning payload..."
               isRunning={isRunning}
               onClick={() => runProxy()}

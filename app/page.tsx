@@ -54,14 +54,14 @@ const PROJECTS = [
     demoHref: "/workflow",
   },
   {
-    title: "Data Privacy & Safety Suite",
+    title: "Sensitive Data Redaction Gateway",
     icon: ShieldCheck,
     accent: "aqua" as const,
     framing: PRIVACY_FRAMING,
     summary:
-      "A redaction proxy that scrubs or blocks sensitive tokens before they reach downstream tools or AI.",
+      "A governed gateway that inspects operational text before it reaches downstream tools or AI.",
     outcome:
-      "Clean tickets pass; embedded PII is masked; bulk restricted dumps stop pre-transit.",
+      "Known PII is masked, bulk-restricted payloads stop, and every decision produces reviewable evidence.",
     tech: ["TypeScript", "Next.js", "SSE"],
     demoHref: "/privacy",
   },
@@ -317,7 +317,7 @@ export default function HomePage() {
 
       <section
         id="projects"
-        className="mx-auto max-w-7xl scroll-mt-24 px-5 pb-16 pt-6 sm:px-6 sm:pb-20 lg:px-8"
+        className="mx-auto max-w-7xl scroll-mt-24 px-5 pb-10 pt-6 sm:px-6 sm:pb-12 lg:px-8"
       >
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -440,29 +440,29 @@ export default function HomePage() {
 
       <section
         aria-label="Operator perspective"
-        className="mx-auto max-w-6xl px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8"
+        className="mx-auto max-w-5xl px-5 pb-8 sm:px-6 sm:pb-10 lg:px-8"
       >
-        <div className="relative overflow-hidden rounded-2xl border border-line bg-white/45 px-6 py-8 shadow-opal-soft backdrop-blur-xl sm:grid sm:grid-cols-[0.32fr_1.68fr] sm:gap-8 sm:px-8 sm:py-10">
+        <div className="relative overflow-hidden rounded-2xl border border-line bg-white/45 px-4 py-4 shadow-opal-soft backdrop-blur-xl sm:grid sm:grid-cols-[0.24fr_1.76fr] sm:items-center sm:gap-6 sm:px-6 sm:py-6">
           <div
             className="absolute bottom-0 left-0 top-0 w-1 bg-gradient-to-b from-accent via-opal-aqua to-opal-shell"
             aria-hidden
           />
-          <div>
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent-deep">
-              <Quote className="h-4 w-4" fill="currentColor" aria-hidden />
+          <div className="flex items-center gap-2.5 sm:block">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-accent-soft text-accent-deep">
+              <Quote className="h-3.5 w-3.5" fill="currentColor" aria-hidden />
             </span>
-            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.1em] text-opal-label">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-opal-label sm:mt-2.5">
               Operator perspective
             </p>
           </div>
-          <blockquote className="mt-6 max-w-4xl sm:mt-0">
-            <p className="font-display text-[22px] font-medium leading-snug tracking-[-0.02em] text-opal-main sm:text-2xl lg:text-[27px]">
+          <blockquote className="mt-3 max-w-4xl sm:mt-0">
+            <p className="font-display text-[18px] font-medium leading-[1.3] tracking-[-0.02em] text-opal-main sm:text-[22px] sm:leading-snug">
               I spent years running operations before I designed systems. That
               experience shapes every workflow, automation, and platform I
               build.
             </p>
-            <footer className="mt-4 flex items-center gap-3 text-xs text-opal-muted">
-              <span className="h-px w-10 bg-accent" aria-hidden />
+            <footer className="mt-2.5 flex items-center gap-2.5 text-[11px] text-opal-muted">
+              <span className="h-px w-8 bg-accent" aria-hidden />
               Systems shaped by operational reality
             </footer>
           </blockquote>
@@ -471,9 +471,9 @@ export default function HomePage() {
 
       <section
         id="where-i-deliver"
-        className="mx-auto max-w-7xl scroll-mt-24 px-5 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-16 lg:px-8"
+        className="mx-auto max-w-7xl scroll-mt-24 px-5 pb-12 sm:px-6 sm:pb-16 lg:px-8"
       >
-        <div className="mb-6">
+        <div className="mb-5">
           <p className="label-opal">Capabilities</p>
           <h2 className="mt-1.5 font-display text-2xl font-semibold tracking-tight text-opal-main">
             What I Build

@@ -152,7 +152,7 @@ export function PrivacyOpsConsole({
       sourceFiles={PRIVACY_SOURCE_FILES}
       live={
         <OpsConsoleShell
-          title="Privacy proxy console"
+          title="Redaction gateway console"
           statusLabel={statusLabel}
           statusTone={statusTone}
           isRunning={isRunning}
@@ -242,11 +242,14 @@ export function PrivacyOpsConsole({
           </div>
 
           {idle ? (
-            <div className="rounded-xl border border-console-border bg-console-panel px-3.5 py-4 text-center">
-              <p className="text-sm text-opal-muted">
-                Pick a scenario or paste a custom payload. Clean payloads pass;
-                embedded PII is sanitized; bulk restricted payloads are blocked
-                and open a security review case.
+            <div className="rounded-xl border border-accent/15 bg-accent-soft/40 px-4 py-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-accent-deep">
+                Expected control path
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-opal-muted">
+                Run the selected ticket to inspect findings, compare client-owned
+                input with safe downstream output, and review the decision
+                receipt.
               </p>
             </div>
           ) : null}
@@ -390,9 +393,9 @@ export function PrivacyOpsConsole({
                 Over-mask recovery
               </p>
               <p className="mt-1 text-sm leading-relaxed text-opal-muted">
-                If regex mangling blocked useful support text, release one
-                finding kind as a false positive and re-scan. Raw text still
-                never leaves the client in the event stream.
+                If automated masking removed useful support text, release one
+                finding kind for this run with a required reason. Raw text still
+                never enters the event stream.
               </p>
               <label className="mt-3 block">
                 <span className="label-console">Override reason</span>

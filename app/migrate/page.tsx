@@ -3,6 +3,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { GlassBox } from "@/components/ui/GlassBox";
 import { MigrateOpsConsole } from "@/components/visualizers/MigrateOpsConsole";
+import { MigrateArchitectureFlow } from "@/components/visualizers/MigrateArchitectureFlow";
 import { Badge } from "@/components/ui/Badge";
 import {
   DemoPrimaryButton,
@@ -288,12 +289,10 @@ export default function MigratePage() {
           failure:
             "Row-level formatting errors reject the atomic batch, quarantining the inbound file so production data remains intact.",
         }}
-        architecture="Next.js sends a preset or uploaded CSV to /api/migrate. A TypeScript engine parses actual rows, applies operator mappings or a saved playbook, normalizes and validates related entities, then streams mapping, quarantine, remediation, receipt, and atomic commit evidence over SSE."
-        tradeoffs={[
-          "The public demo performs real in-process parsing and validation but simulates the final database transaction.",
-          "Strict reusable templates require upfront mapping decisions; that work prevents repeated manual cleanup on every onboarding.",
-          "Production isolation would use tenant-scoped database credentials and a transaction around the full batch; the demo visualizes that boundary without claiming a live PostgreSQL write.",
-        ]}
+        architectureLabel="System design and decisions"
+        architectureKicker="Control flow, operational boundaries, and the engineering choices behind a safe cutover."
+        architectureMode="expanded"
+        architectureVisual={<MigrateArchitectureFlow />}
         stack="TypeScript, Next.js, SSE"
         isRunning={isRunning}
         controlLabel="Scenario"

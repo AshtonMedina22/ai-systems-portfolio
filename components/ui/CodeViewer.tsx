@@ -132,14 +132,18 @@ export function DemoPanelTabs({
           id={liveTabId}
           aria-controls={livePanelId}
           aria-selected={tab === "live"}
+        aria-label={`Step 2: ${liveLabel}`}
           onClick={() => setTab("live")}
-          className={`flex-1 rounded-lg px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+        className={`flex min-h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
             tab === "live"
-              ? "bg-accent-soft text-accent-deep ring-1 ring-accent/30"
-              : "text-opal-muted hover:bg-white/55 hover:text-opal-main"
+              ? "border-accent/35 bg-accent-soft text-accent-deep ring-1 ring-accent/25"
+              : "border-line bg-white/45 text-opal-muted hover:border-line-strong hover:bg-white/75 hover:text-opal-main"
           }`}
         >
-          {liveLabel}
+          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/70 text-[10px] font-bold ring-1 ring-line">
+            2
+          </span>
+          <span>{liveLabel}</span>
         </button>
         <button
           type="button"
@@ -147,14 +151,18 @@ export function DemoPanelTabs({
           id={sourceTabId}
           aria-controls={sourcePanelId}
           aria-selected={tab === "source"}
+        aria-label="Step 3: How it works"
           onClick={() => setTab("source")}
-          className={`flex-1 rounded-lg px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+        className={`flex min-h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
             tab === "source"
-              ? "bg-accent-soft text-accent-deep ring-1 ring-accent/30"
-              : "text-opal-muted hover:bg-white/55 hover:text-opal-main"
+              ? "border-accent/35 bg-accent-soft text-accent-deep ring-1 ring-accent/25"
+              : "border-line bg-white/45 text-opal-muted hover:border-line-strong hover:bg-white/75 hover:text-opal-main"
           }`}
         >
-          How it works
+          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/70 text-[10px] font-bold ring-1 ring-line">
+            3
+          </span>
+          <span>How it works</span>
         </button>
       </div>
       <div

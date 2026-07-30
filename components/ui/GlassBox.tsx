@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 
 export interface GlassBoxProps {
   title: string;
@@ -16,6 +17,12 @@ export interface GlassBoxProps {
   impact?: string;
   /** Callout for mismatch / hold / review path. */
   whenWrong?: React.ReactNode;
+  /** Optional exception section heading. */
+  exceptionLabel?: string;
+  /** Optional supporting line beneath the exception heading. */
+  exceptionKicker?: string;
+  /** Keep the exception model visible instead of placing it in a disclosure. */
+  exceptionMode?: "collapsible" | "expanded";
   /**
    * Executive guardrails panel - same three headings on every demo.
    * Answers success metric, access scope, and failure ownership.
@@ -29,6 +36,12 @@ export interface GlassBoxProps {
   architecture?: string;
   /** Visual flow diagram shown in the architecture section. */
   architectureVisual?: React.ReactNode;
+  /** Optional architecture section heading. */
+  architectureLabel?: string;
+  /** Optional supporting line beneath the architecture heading. */
+  architectureKicker?: string;
+  /** Keep the architecture visible instead of placing it in a disclosure. */
+  architectureMode?: "collapsible" | "expanded";
   /** 2-3 real trade-offs for this project. */
   tradeoffs?: readonly string[];
   stack?: string;
@@ -60,9 +73,15 @@ export function GlassBox({
   solution,
   impact,
   whenWrong,
+  exceptionLabel = "Exception path",
+  exceptionKicker,
+  exceptionMode = "collapsible",
   guardrails,
   architecture,
   architectureVisual,
+  architectureLabel = "Architecture and trade-offs",
+  architectureKicker,
+  architectureMode = "collapsible",
   tradeoffs,
   stack,
   controlPanel,
@@ -83,6 +102,37 @@ export function GlassBox({
       architectureVisual ||
       (tradeoffs && tradeoffs.length > 0)
   );
+  const architectureBody = hasArch ? (
+    <div
+      className={`grid gap-5 ${
+        architectureVisual && (architecture || tradeoffs?.length)
+          ? "lg:grid-cols-[1.1fr_0.9fr]"
+          : ""
+      }`}
+      aria-label={architectureLabel}
+    >
+      {architectureVisual ? architectureVisual : null}
+      {architecture || (tradeoffs && tradeoffs.length > 0) ? (
+        <div>
+          {architecture ? (
+            <p className="text-[14px] leading-relaxed text-opal-muted">
+              {architecture}
+            </p>
+          ) : null}
+          {tradeoffs && tradeoffs.length > 0 ? (
+            <div className={architecture ? "mt-4" : ""}>
+              <p className="label-opal">Trade-offs</p>
+              <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[14px] leading-relaxed text-opal-muted">
+                {tradeoffs.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  ) : null;
 
   return (
     <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -217,67 +267,81 @@ export function GlassBox({
         </section>
       ) : null}
 
-      {whenWrong ? (
-        <details className="group mt-5 max-w-6xl border-t border-line pt-4 open:pb-0">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+      {whenWrong && exceptionMode === "expanded" ? (
+        <section
+          aria-labelledby="exception-heading"
+          className="mt-5 max-w-6xl overflow-hidden rounded-2xl border border-line bg-white/45 shadow-opal-soft backdrop-blur-xl"
+        >
+          <header className="border-b border-line bg-white/45 px-4 py-4 sm:px-5">
+            <h2 id="exception-heading" className="label-opal">
+              {exceptionLabel}
+            </h2>
+            {exceptionKicker ? (
+              <p className="mt-1 text-sm leading-relaxed text-opal-muted">
+                {exceptionKicker}
+              </p>
+            ) : null}
+          </header>
+          <div className="px-4 py-5 sm:px-5">{whenWrong}</div>
+        </section>
+      ) : whenWrong ? (
+        <details className="group mt-5 max-w-6xl overflow-hidden rounded-xl border border-line bg-white/35 shadow-sm backdrop-blur-xl">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5 sm:px-5">
             <span>
-              <span className="label-opal">Exception path</span>
-              <span className="ml-2 text-sm text-opal-muted">
-                Hold / review
+              <span className="block label-opal">{exceptionLabel}</span>
+              <span className="mt-1 block text-sm text-opal-muted">
+                {exceptionKicker ?? "Hold / review"}
               </span>
             </span>
-            <span
-              className="text-lg leading-none text-opal-muted transition-transform group-open:rotate-45"
+            <ChevronDown
+              className="h-4 w-4 shrink-0 text-opal-muted transition-transform group-open:rotate-180"
               aria-hidden
-            >
-              +
-            </span>
+            />
           </summary>
-          <div className="mt-3" aria-label="What happens when it is wrong">
+          <div
+            className="border-t border-line px-4 py-4 sm:px-5"
+            aria-label="What happens when it is wrong"
+          >
             {whenWrong}
           </div>
         </details>
       ) : null}
 
-      {hasArch ? (
-        <details className="group mt-5 max-w-6xl border-t border-line pt-4">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-            <span className="label-opal">Architecture and trade-offs</span>
-            <span
-              className="text-lg leading-none text-opal-muted transition-transform group-open:rotate-45"
-              aria-hidden
-            >
-              +
-            </span>
-          </summary>
-          <div
-            className={`mt-3 grid gap-5 ${
-              architectureVisual && (architecture || tradeoffs?.length)
-                ? "lg:grid-cols-[1.1fr_0.9fr]"
-                : ""
-            }`}
-            aria-label="Architecture and trade-offs"
-          >
-            {architectureVisual ? architectureVisual : null}
-            {architecture || (tradeoffs && tradeoffs.length > 0) ? (
-              <div>
-                {architecture ? (
-                  <p className="text-[14px] leading-relaxed text-opal-muted">
-                    {architecture}
-                  </p>
-                ) : null}
-                {tradeoffs && tradeoffs.length > 0 ? (
-                  <div className={architecture ? "mt-4" : ""}>
-                    <p className="label-opal">Trade-offs</p>
-                    <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[14px] leading-relaxed text-opal-muted">
-                      {tradeoffs.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </div>
+      {hasArch && architectureMode === "expanded" ? (
+        <section
+          aria-labelledby="architecture-heading"
+          className="mt-5 max-w-6xl overflow-hidden rounded-2xl border border-line bg-white/45 shadow-opal-soft backdrop-blur-xl"
+        >
+          <header className="border-b border-line bg-white/45 px-4 py-4 sm:px-5">
+            <h2 id="architecture-heading" className="label-opal">
+              {architectureLabel}
+            </h2>
+            {architectureKicker ? (
+              <p className="mt-1 text-sm leading-relaxed text-opal-muted">
+                {architectureKicker}
+              </p>
             ) : null}
+          </header>
+          <div className="px-4 py-5 sm:px-5">{architectureBody}</div>
+        </section>
+      ) : hasArch ? (
+        <details className="group mt-5 max-w-6xl overflow-hidden rounded-xl border border-line bg-white/35 shadow-sm backdrop-blur-xl">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5 sm:px-5">
+            <span>
+              <span className="block label-opal">{architectureLabel}</span>
+              {architectureKicker ? (
+                <span className="mt-1 block text-sm leading-relaxed text-opal-muted">
+                  {architectureKicker}
+                </span>
+              ) : null}
+            </span>
+            <ChevronDown
+              className="h-4 w-4 shrink-0 text-opal-muted transition-transform group-open:rotate-180"
+              aria-hidden
+            />
+          </summary>
+          <div className="border-t border-line px-4 py-4 sm:px-5">
+            {architectureBody}
           </div>
         </details>
       ) : null}
@@ -289,7 +353,7 @@ export function GlassBox({
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
             <p className="label-opal">{framing}</p>
             <p className="text-sm text-opal-muted">
-              Controls left - live run or How it works on the right
+              1 Choose a scenario · 2 Run the system · 3 Inspect how it works
             </p>
           </div>
         ) : null}
@@ -297,9 +361,26 @@ export function GlassBox({
           data-running={isRunning}
           className="workspace-shell grid grid-cols-1 overflow-hidden lg:min-h-[560px] lg:grid-cols-12"
         >
-          <aside className="border-b border-white/60 bg-white/48 p-5 backdrop-blur-xl sm:p-6 lg:col-span-4 lg:overflow-y-auto lg:border-b-0 lg:border-r">
-            <h2 className="label-opal mb-4">{controlLabel}</h2>
-            {controlPanel}
+          <aside className="border-b border-white/60 bg-white/48 backdrop-blur-xl lg:col-span-4 lg:overflow-y-auto lg:border-b-0 lg:border-r">
+            <div className="opal-chrome border-b border-console-border px-2 py-2 sm:px-3">
+              <div className="flex min-h-10 items-center gap-2.5 rounded-lg border border-line-strong bg-white/60 px-3 py-2 shadow-sm">
+                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white">
+                  1
+                </span>
+                <span>
+                  <span className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-opal-main">
+                    Choose {controlLabel.toLowerCase()}
+                  </span>
+                  <span className="block text-[10px] text-opal-muted">
+                    Select an input, then use the run button
+                  </span>
+                </span>
+              </div>
+            </div>
+            <div className="p-5 sm:p-6">
+              <h2 className="sr-only">{controlLabel}</h2>
+              {controlPanel}
+            </div>
           </aside>
 
           <section className="console-shell flex min-h-[360px] flex-col overflow-hidden sm:min-h-[400px] lg:col-span-8 lg:min-h-0">
